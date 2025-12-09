@@ -52,7 +52,9 @@ fun MainNavGraph(
     val rootNavController = rememberNavController()
     var currentAccountType by remember { mutableStateOf<String?>(null) }
 
-    // Solo para auto-login al iniciar la app
+    // Auto-login desactivado - siempre se requiere login al abrir la app
+    // Si quieres activar el auto-login (recordar sesión), descomenta el código siguiente:
+    /*
     LaunchedEffect(Unit) {
         val savedAccountType = accountTypeFlow.firstOrNull()
 
@@ -71,6 +73,7 @@ fun MainNavGraph(
             }
         }
     }
+    */
 
     NavHost(
         navController = rootNavController,

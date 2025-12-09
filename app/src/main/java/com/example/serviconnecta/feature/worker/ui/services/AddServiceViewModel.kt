@@ -1,8 +1,9 @@
 package com.example.serviconnecta.feature.worker.ui.services
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.serviconnecta.feature.worker.data.MockWorkerRepository
+import com.example.serviconnecta.feature.worker.data.WorkerRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -13,6 +14,7 @@ data class AddServiceUiState(
     val title: String = "",
     val description: String = "",
     val category: String = "Servicio de electricidad",
+    val categoryId: String = "692b8dc198d59291c777649e",
     val price: String = "",
     val imageBase64: String? = null,
     val isLoading: Boolean = false,
@@ -21,11 +23,18 @@ data class AddServiceUiState(
 )
 
 class AddServiceViewModel(
-    private val repository: MockWorkerRepository = MockWorkerRepository
+    private val repository: WorkerRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AddServiceUiState())
     val uiState: StateFlow<AddServiceUiState> = _uiState.asStateFlow()
+
+    // Mapeo de nombres de categorías a IDs
+    private val categoryMap = mapOf(
+        "Servicio de electricidad" to "692b8dc198d59291c777649e",
+        "Servicio de gasfitería" to "692b8dc198d59291c777649d",
+        "Servicio de albañilería" to "692b8dc198d59291c777649f"
+    )
 
     fun updateTitle(title: String) {
         _uiState.update { it.copy(title = title) }
@@ -36,7 +45,8 @@ class AddServiceViewModel(
     }
 
     fun updateCategory(category: String) {
-        _uiState.update { it.copy(category = category) }
+        val categoryId = categoryMap[category] ?: "692b8dc198d59291c777649e"
+        _uiState.update { it.copy(category = category, categoryId = categoryId) }
     }
 
     fun updatePrice(price: String) {
@@ -68,35 +78,47 @@ class AddServiceViewModel(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
 
-            repository.createService(
-                title = state.title,
-                description = state.description,
-                category = state.category,
-                price = state.price.toDouble(),
-                imageBase64 = state.imageBase64
-            ).fold(
-                onSuccess = {
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            isSuccess = true,
-                            errorMessage = null
-                        )
-                    }
-                },
-                onFailure = { error ->
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            errorMessage = error.message ?: "Error al crear servicio"
-                        )
-                    }
+            try {
+                repository.createService(
+                    title = state.title,
+                    description = state.description,
+                    categoryId = state.categoryId,
+                    price = state.price.toDouble(),
+                    currency = "PEN",
+                    imageBase64 = state.imageBase64
+                )
+
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        isSuccess = true,
+                        errorMessage = null
+                    )
                 }
-            )
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = e.message ?: "Error al crear servicio"
+                    )
+                }
+            }
         }
     }
 
     fun clearError() {
         _uiState.update { it.copy(errorMessage = null) }
+    }
+}
+
+class AddServiceViewModelFactory(
+    private val repository: WorkerRepository
+) : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(AddServiceViewModel::class.java)) {
+            @Suppress("UNCHECKED_CAST")
+            return AddServiceViewModel(repository) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }

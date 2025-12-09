@@ -2,16 +2,24 @@ package com.example.serviconnecta.feature.worker.domain.model
 
 data class Service(
     val id: String,
-    val workerId: String,
     val title: String,
-    val description: String,
-    val category: String,
+    val description: String? = null,
+    val category: ServiceCategory,
     val price: Double,
-    val imageUrl: String?,
-    val rating: Double,
-    val reviewCount: Int,
-    val createdAt: String
+    val currency: String = "PEN",
+    val status: ServiceStatus,
+    val pendingRequestsCount: Int = 0,
+    val imageUrl: String? = null
 )
+
+data class ServiceCategory(
+    val id: String,
+    val name: String
+)
+
+enum class ServiceStatus {
+    ACTIVE, PAUSED
+}
 
 //data class ServiceRequest(
 //    val id: String,
@@ -112,4 +120,19 @@ data class WorkerHomeResponse(
     val nextReservation: NextReservation,
     val servicesSummary: ServicesSummary,
     val ratingSummary: RatingSummary
+)
+
+// Modelo de paginación
+data class Pagination(
+    val page: Int,
+    val pageSize: Int,
+    val totalItems: Int,
+    val totalPages: Int
+)
+
+// Modelo de respuesta completa de servicios
+data class ServicesData(
+    val pagination: Pagination,
+    val services: List<Service>,
+    val reservationsSummary: List<ServiceRequest>
 )

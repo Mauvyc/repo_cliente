@@ -25,9 +25,12 @@ import com.example.serviconnecta.feature.worker.domain.model.ServiceRequest
 fun RequestsScreen(
     onNavigateBack: () -> Unit,
     onNavigateToProfile: () -> Unit,
-    viewModel: RequestsViewModel = viewModel()
+    workerRepository: com.example.serviconnecta.feature.worker.data.WorkerRepository
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val requestsViewModel: RequestsViewModel = viewModel(
+        factory = RequestsViewModelFactory(repository = workerRepository)
+    )
+    val uiState by requestsViewModel.uiState.collectAsState()
 
     Scaffold(
         topBar = {
@@ -52,7 +55,7 @@ fun RequestsScreen(
                     selected = true,
                     onClick = { },
                     icon = { Icon(Icons.AutoMirrored.Filled.List, null) },
-                    label = { Text("Solicitudes") }
+                    label = { Text("Servicios") }
                 )
                 NavigationBarItem(
                     selected = false,
@@ -73,7 +76,7 @@ fun RequestsScreen(
             items(uiState.requests) { request ->
                 RequestCard(
                     request = request,
-                    onClick = { viewModel.showRequestDetail(request) }
+                    onClick = { requestsViewModel.showRequestDetail(request) }
                 )
             }
 
@@ -97,16 +100,16 @@ fun RequestsScreen(
     if (uiState.showDetailDialog && uiState.selectedRequest != null) {
         RequestDetailDialog(
             request = uiState.selectedRequest!!,
-            onDismiss = viewModel::hideRequestDetail,
-            onAccept = { viewModel.acceptRequest(uiState.selectedRequest!!.requestId) },
-            onReject = { viewModel.rejectRequest(uiState.selectedRequest!!.requestId) }
+            onDismiss = requestsViewModel::hideRequestDetail,
+            onAccept = { requestsViewModel.acceptRequest(uiState.selectedRequest!!.requestId) },
+            onReject = { requestsViewModel.rejectRequest(uiState.selectedRequest!!.requestId) }
         )
     }
 
     uiState.successMessage?.let { message ->
         LaunchedEffect(message) {
             kotlinx.coroutines.delay(2000)
-            viewModel.clearMessages()
+            requestsViewModel.clearMessages()
         }
         Snackbar(modifier = Modifier.padding(16.dp)) {
             Text(message)

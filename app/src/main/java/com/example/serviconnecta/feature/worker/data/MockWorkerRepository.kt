@@ -11,39 +11,36 @@ object MockWorkerRepository {
     private val mockServices = mutableListOf(
         Service(
             id = "srv_001",
-            workerId = "worker_001",
             title = "Revisión de cables electricos",
             description = "Atendemos fallas eléctricas e instalamos tomacorrientes, interruptores y luminarias. Técnicos certificados, llegada el mismo día, cotización previa y garantía de 30 días. Trabajo seguro y materiales de calidad.",
-            category = "Servicio de electricidad",
+            category = ServiceCategory(id = "692b8dc198d59291c777649e", name = "Servicio de electricidad"),
             price = 20.0,
-            imageUrl = null,
-            rating = 4.0,
-            reviewCount = 52,
-            createdAt = "2025-11-20T10:00:00Z"
+            currency = "PEN",
+            status = ServiceStatus.ACTIVE,
+            pendingRequestsCount = 2,
+            imageUrl = null
         ),
         Service(
             id = "srv_002",
-            workerId = "worker_001",
             title = "Instalación de tomacorrientes",
             description = "Atendemos fallas eléctricas e instalamos tomacorrientes, interruptores y luminarias. Técnicos certificados, llegada el mismo día, cotización previa y garantía de 30 días. Trabajo seguro y materiales de calidad.",
-            category = "Servicio de electricidad",
+            category = ServiceCategory(id = "692b8dc198d59291c777649e", name = "Servicio de electricidad"),
             price = 20.0,
-            imageUrl = null,
-            rating = 4.0,
-            reviewCount = 35,
-            createdAt = "2025-11-18T14:30:00Z"
+            currency = "PEN",
+            status = ServiceStatus.PAUSED,
+            pendingRequestsCount = 0,
+            imageUrl = null
         ),
         Service(
             id = "srv_003",
-            workerId = "worker_001",
             title = "Verificación de fuga electrica",
             description = "Atendemos fallas eléctricas e instalamos tomacorrientes, interruptores y luminarias. Técnicos certificados, llegada el mismo día, cotización previa y garantía de 30 días. Trabajo seguro y materiales de calidad.",
-            category = "Servicio de electricidad",
+            category = ServiceCategory(id = "692b8dc198d59291c777649e", name = "Servicio de electricidad"),
             price = 20.0,
-            imageUrl = null,
-            rating = 4.0,
-            reviewCount = 28,
-            createdAt = "2025-11-15T09:15:00Z"
+            currency = "PEN",
+            status = ServiceStatus.ACTIVE,
+            pendingRequestsCount = 1,
+            imageUrl = null
         )
     )
 
@@ -144,24 +141,27 @@ object MockWorkerRepository {
     suspend fun createService(
         title: String,
         description: String,
-        category: String,
+        categoryId: String,
         price: Double,
         imageBase64: String?
     ): Result<Service> {
         delay(500)
+        val categoryName = when(categoryId) {
+            "692b8dc198d59291c777649e" -> "Servicio de electricidad"
+            "692b8dc198d59291c777649d" -> "Servicio de gasfitería"
+            "692b8dc198d59291c777649f" -> "Servicio de albañilería"
+            else -> "Servicio de electricidad"
+        }
         val newService = Service(
             id = "srv_${System.currentTimeMillis()}",
-            workerId = "worker_001",
             title = title,
             description = description,
-            category = category,
+            category = ServiceCategory(id = categoryId, name = categoryName),
             price = price,
-            imageUrl = imageBase64,
-            rating = 0.0,
-            reviewCount = 0,
-            // Corrección compatible con API level < 26 si fuera necesario, pero mantenemos el original o usamos java.util.Date si da error
-            // Por ahora dejamos el original pero ojo con minSdk 24
-            createdAt = java.time.Instant.now().toString()
+            currency = "PEN",
+            status = ServiceStatus.ACTIVE,
+            pendingRequestsCount = 0,
+            imageUrl = imageBase64
         )
         mockServices.add(0, newService)
         return Result.success(newService)
@@ -169,22 +169,24 @@ object MockWorkerRepository {
 
     suspend fun updateService(
         serviceId: String,
-        title: String,
-        description: String,
-        category: String,
-        price: Double,
-        imageBase64: String?
+        title: String? = null,
+        description: String? = null,
+        price: Double? = null,
+        status: String? = null
     ): Result<Service> {
         delay(500)
         val index = mockServices.indexOfFirst { it.id == serviceId }
         if (index != -1) {
             val existingService = mockServices[index]
             val updatedService = existingService.copy(
-                title = title,
-                description = description,
-                category = category,
-                price = price,
-                imageUrl = imageBase64
+                title = title ?: existingService.title,
+                description = description ?: existingService.description,
+                price = price ?: existingService.price,
+                status = when(status) {
+                    "ACTIVE" -> ServiceStatus.ACTIVE
+                    "PAUSED" -> ServiceStatus.PAUSED
+                    else -> existingService.status
+                }
             )
             mockServices[index] = updatedService
             return Result.success(updatedService)

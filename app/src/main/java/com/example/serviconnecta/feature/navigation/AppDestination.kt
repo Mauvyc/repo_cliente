@@ -13,6 +13,7 @@ sealed class AppDestination(val route: String) {
     }
     data object WorkerAddService : AppDestination("worker/add-service")
     data object WorkerRequests : AppDestination("worker/requests")
+    data object WorkerReservations : AppDestination("worker/reservations")
     data object WorkerSchedule : AppDestination("worker/schedule")
     data object WorkerProfile : AppDestination("worker/profile")
     data object WorkerEditProfile : AppDestination("worker/edit-profile")

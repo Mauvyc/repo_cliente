@@ -62,9 +62,9 @@ fun WorkerHomeScreen(
                 )
                 NavigationBarItem(
                     selected = false,
-                    onClick = onNavigateToRequests,
+                    onClick = onNavigateToServices,
                     icon = { Icon(Icons.Default.List, null) },
-                    label = { Text("Solicitudes") }
+                    label = { Text("Servicios") }
                 )
                 NavigationBarItem(
                     selected = false,

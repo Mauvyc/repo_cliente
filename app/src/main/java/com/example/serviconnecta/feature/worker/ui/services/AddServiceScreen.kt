@@ -16,9 +16,12 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 @Composable
 fun AddServiceScreen(
     onNavigateBack: () -> Unit,
-    viewModel: AddServiceViewModel = viewModel()
+    workerRepository: com.example.serviconnecta.feature.worker.data.WorkerRepository
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val addServiceViewModel: AddServiceViewModel = viewModel(
+        factory = AddServiceViewModelFactory(repository = workerRepository)
+    )
+    val uiState by addServiceViewModel.uiState.collectAsState()
 
     LaunchedEffect(uiState.isSuccess) {
         if (uiState.isSuccess) {
@@ -49,7 +52,7 @@ fun AddServiceScreen(
             Text("Titulo", style = MaterialTheme.typography.labelMedium)
             OutlinedTextField(
                 value = uiState.title,
-                onValueChange = viewModel::updateTitle,
+                onValueChange = addServiceViewModel::updateTitle,
                 placeholder = { Text("Coloque aquí su título...") },
                 modifier = Modifier.fillMaxWidth()
             )
@@ -57,7 +60,7 @@ fun AddServiceScreen(
             Text("Descripción", style = MaterialTheme.typography.labelMedium)
             OutlinedTextField(
                 value = uiState.description,
-                onValueChange = viewModel::updateDescription,
+                onValueChange = addServiceViewModel::updateDescription,
                 placeholder = { Text("Coloque la descripción aquí...") },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -88,7 +91,7 @@ fun AddServiceScreen(
                         DropdownMenuItem(
                             text = { Text(cat) },
                             onClick = {
-                                viewModel.updateCategory(cat)
+                                addServiceViewModel.updateCategory(cat)
                                 expandedCategory = false
                             }
                         )
@@ -99,7 +102,7 @@ fun AddServiceScreen(
             Text("Precio", style = MaterialTheme.typography.labelMedium)
             OutlinedTextField(
                 value = uiState.price,
-                onValueChange = viewModel::updatePrice,
+                onValueChange = addServiceViewModel::updatePrice,
                 placeholder = { Text("Coloque aquí su precio en (S/.)") },
                 modifier = Modifier.fillMaxWidth()
             )
@@ -133,7 +136,7 @@ fun AddServiceScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             Button(
-                onClick = viewModel::createService,
+                onClick = addServiceViewModel::createService,
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !uiState.isLoading
             ) {
@@ -148,7 +151,7 @@ fun AddServiceScreen(
                 Text(error, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
                 LaunchedEffect(error) {
                     kotlinx.coroutines.delay(3000)
-                    viewModel.clearError()
+                    addServiceViewModel.clearError()
                 }
             }
         }

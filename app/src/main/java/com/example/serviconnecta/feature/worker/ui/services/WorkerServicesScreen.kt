@@ -15,9 +15,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.serviconnecta.core.utils.FormatUtils
 import com.example.serviconnecta.feature.worker.domain.model.Service
+import com.example.serviconnecta.feature.worker.domain.model.ServiceRequest
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -26,10 +28,19 @@ fun WorkerServicesScreen(
     onNavigateToAddService: () -> Unit,
     onNavigateToServiceDetail: (String) -> Unit,
     onNavigateToRequests: () -> Unit,
+    onNavigateToReservations: () -> Unit,
     onNavigateToProfile: () -> Unit,
-    viewModel: WorkerServicesViewModel = viewModel()
+    workerRepository: com.example.serviconnecta.feature.worker.data.WorkerRepository
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val workerServicesViewModel: WorkerServicesViewModel = viewModel(
+        factory = WorkerServicesViewModelFactory(repository = workerRepository)
+    )
+    val uiState by workerServicesViewModel.uiState.collectAsState()
+
+    // Recargar servicios cada vez que la pantalla se vuelve visible
+    LaunchedEffect(Unit) {
+        workerServicesViewModel.loadServices()
+    }
 
     Scaffold(
         topBar = {
@@ -76,7 +87,7 @@ fun WorkerServicesScreen(
                 ServiceCard(
                     service = service,
                     onEdit = { onNavigateToServiceDetail(service.id) },
-                    onDelete = { viewModel.deleteService(service.id) }
+                    onToggleStatus = { workerServicesViewModel.toggleServiceStatus(service.id, service.status.name) }
                 )
             }
 
@@ -108,14 +119,38 @@ fun WorkerServicesScreen(
 
             item {
                 HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
-                Text("Reservas", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Solicitudes", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    if (uiState.serviceRequests.isNotEmpty()) {
+                        TextButton(onClick = onNavigateToRequests) {
+                            Text("Ver todas")
+                        }
+                    }
+                }
             }
 
-            items(uiState.requests.take(1)) { request ->
+            item {
+                if (uiState.serviceRequests.isEmpty()) {
+                    Card(modifier = Modifier.fillMaxWidth()) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text("No tienes solicitudes pendientes", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
+                        }
+                    }
+                }
+            }
+
+            items(uiState.serviceRequests.take(3)) { request ->
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { onNavigateToRequests() }
+                        .clickable { workerServicesViewModel.showRequestDetail(request) }
                 ) {
                     Row(
                         modifier = Modifier.padding(16.dp),
@@ -135,13 +170,86 @@ fun WorkerServicesScreen(
                     }
                 }
             }
+
+            item {
+                HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Reservas", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    if (uiState.requests.isNotEmpty()) {
+                        TextButton(onClick = onNavigateToReservations) {
+                            Text("Ver todas")
+                        }
+                    }
+                }
+            }
+
+            item {
+                if (uiState.requests.isEmpty()) {
+                    Card(modifier = Modifier.fillMaxWidth()) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text("No tienes reservas confirmadas", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
+                        }
+                    }
+                }
+            }
+
+            items(uiState.requests.take(3)) { reservation ->
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { workerServicesViewModel.showReservationDetail(reservation) }
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.Person, null, modifier = Modifier.size(40.dp))
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(reservation.serviceTitle, fontWeight = FontWeight.Bold)
+                            Text(
+                                "${reservation.clientName} • ${reservation.location}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color.Gray
+                            )
+                        }
+                        Icon(Icons.AutoMirrored.Filled.ArrowForward, null)
+                    }
+                }
+            }
         }
+    }
+
+    // Diálogo de detalle de solicitud
+    if (uiState.showRequestDetailDialog && uiState.selectedRequest != null) {
+        RequestDetailDialog(
+            request = uiState.selectedRequest!!,
+            onDismiss = workerServicesViewModel::hideRequestDetail,
+            onAccept = { workerServicesViewModel.acceptRequest(uiState.selectedRequest!!.requestId) },
+            onReject = { workerServicesViewModel.rejectRequest(uiState.selectedRequest!!.requestId) }
+        )
+    }
+
+    // Diálogo de detalle de reserva
+    if (uiState.showReservationDetailDialog && uiState.selectedReservation != null) {
+        ReservationDetailDialog(
+            reservation = uiState.selectedReservation!!,
+            onDismiss = workerServicesViewModel::hideReservationDetail,
+            onCancel = { workerServicesViewModel.cancelReservation(uiState.selectedReservation!!.requestId) }
+        )
     }
 
     uiState.successMessage?.let { message ->
         LaunchedEffect(message) {
             kotlinx.coroutines.delay(2000)
-            viewModel.clearMessages()
+            workerServicesViewModel.clearMessages()
         }
         Snackbar(
             modifier = Modifier.padding(16.dp)
@@ -155,57 +263,287 @@ fun WorkerServicesScreen(
 private fun ServiceCard(
     service: Service,
     onEdit: () -> Unit,
-    onDelete: () -> Unit
+    onToggleStatus: () -> Unit
 ) {
-    var showDeleteDialog by remember { mutableStateOf(false) }
-
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onEdit() }
+            .clickable { onEdit() },
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Row(
-            modifier = Modifier.padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(service.title, fontWeight = FontWeight.Bold)
-                Text(service.category, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(service.description, style = MaterialTheme.typography.bodySmall, maxLines = 2)
-                Spacer(modifier = Modifier.height(8.dp))
-                Text("Precio", style = MaterialTheme.typography.labelSmall)
-                Text(FormatUtils.formatPrice(service.price), fontWeight = FontWeight.Bold)
-            }
-            Column(horizontalAlignment = Alignment.End) {
-                IconButton(onClick = { showDeleteDialog = true }) {
-                    Icon(Icons.Default.Close, "Eliminar")
+            // Icon placeholder
+            Surface(
+                modifier = Modifier.size(56.dp),
+                shape = MaterialTheme.shapes.medium,
+                color = MaterialTheme.colorScheme.primaryContainer
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        Icons.Default.Build,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(28.dp)
+                    )
                 }
-                TextButton(onClick = onEdit) {
-                    Text("Editar")
+            }
+
+            Spacer(modifier = Modifier.width(14.dp))
+
+            // Content
+            Column(modifier = Modifier.weight(1f)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        service.title,
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1
+                    )
+
+                    // Pending requests badge
+                    if (service.pendingRequestsCount > 0) {
+                        Surface(
+                            shape = MaterialTheme.shapes.small,
+                            color = Color(0xFFE53935)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .padding(horizontal = 7.dp, vertical = 3.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    service.pendingRequestsCount.toString(),
+                                    color = Color.White,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Text(
+                    service.category.name,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.Gray
+                )
+            }
+
+            Icon(
+                Icons.AutoMirrored.Filled.ArrowForward,
+                contentDescription = null,
+                tint = Color.Gray,
+                modifier = Modifier.size(22.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun RequestDetailDialog(
+    request: ServiceRequest,
+    onDismiss: () -> Unit,
+    onAccept: () -> Unit,
+    onReject: () -> Unit
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Card {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    HorizontalDivider(
+                        modifier = Modifier
+                            .width(40.dp)
+                            .padding(bottom = 16.dp),
+                        thickness = 4.dp,
+                        color = Color.Gray
+                    )
+                }
+
+                Text(request.clientName, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Icon(Icons.Default.Person, null, modifier = Modifier.size(100.dp))
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                InfoRow("Fecha:", request.date)
+                InfoRow("Horario:", request.timeRange)
+                InfoRow("Ubicación:", request.location)
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Button(
+                    onClick = onAccept,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Aceptar")
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedButton(
+                    onClick = onReject,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Rechazar", color = Color.Red)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ReservationDetailDialog(
+    reservation: ServiceRequest,
+    onDismiss: () -> Unit,
+    onCancel: () -> Unit
+) {
+    var showCancelConfirmation by remember { mutableStateOf(false) }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Card(modifier = Modifier.fillMaxWidth()) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Header handle
+                HorizontalDivider(
+                    modifier = Modifier
+                        .width(40.dp)
+                        .padding(bottom = 16.dp),
+                    thickness = 4.dp,
+                    color = Color.Gray
+                )
+
+                Text(
+                    "Servicios",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp)
+                )
+
+                // Service info card
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Text(
+                            reservation.serviceTitle,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Text(
+                            "Servicio de electricidad",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.Gray
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Client name
+                Text(
+                    reservation.clientName,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Avatar placeholder
+                Box(
+                    modifier = Modifier
+                        .size(120.dp)
+                        .padding(8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Default.Person,
+                        contentDescription = null,
+                        modifier = Modifier.size(80.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Reservation details
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    InfoRow("Fecha:", reservation.date)
+                    InfoRow("Horario:", reservation.timeRange)
+                    InfoRow("Ubicación:", reservation.location)
+                    InfoRow("Método de pago:", "Efectivo")
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Cancel button
+                Button(
+                    onClick = { showCancelConfirmation = true },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("Cancelar")
                 }
             }
         }
     }
 
-    if (showDeleteDialog) {
+    if (showCancelConfirmation) {
         AlertDialog(
-            onDismissRequest = { showDeleteDialog = false },
-            title = { Text("Eliminar servicio") },
-            text = { Text("¿Estás seguro de que quieres eliminar este servicio?") },
+            onDismissRequest = { showCancelConfirmation = false },
+            title = { Text("Cancelar Reserva") },
+            text = { Text("¿Estás seguro de que deseas cancelar esta reserva?") },
             confirmButton = {
-                TextButton(onClick = {
-                    onDelete()
-                    showDeleteDialog = false
-                }) {
-                    Text("Eliminar")
+                TextButton(
+                    onClick = {
+                        showCancelConfirmation = false
+                        onCancel()
+                        onDismiss()
+                    }
+                ) {
+                    Text("Confirmar")
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showDeleteDialog = false }) {
-                    Text("Cancelar")
+                TextButton(onClick = { showCancelConfirmation = false }) {
+                    Text("Volver")
                 }
             }
         )
+    }
+}
+
+@Composable
+private fun InfoRow(label: String, value: String) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+    ) {
+        Text(label, fontWeight = FontWeight.Bold, modifier = Modifier.width(120.dp))
+        Text(value)
     }
 }

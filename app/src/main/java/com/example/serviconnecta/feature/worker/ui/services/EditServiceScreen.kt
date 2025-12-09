@@ -17,13 +17,12 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 fun EditServiceScreen(
     serviceId: String,
     onNavigateBack: () -> Unit,
-    viewModel: EditServiceViewModel = viewModel()
+    workerRepository: com.example.serviconnecta.feature.worker.data.WorkerRepository
 ) {
-    val uiState by viewModel.uiState.collectAsState()
-
-    LaunchedEffect(serviceId) {
-        viewModel.loadService(serviceId)
-    }
+    val editServiceViewModel: EditServiceViewModel = viewModel(
+        factory = EditServiceViewModelFactory(repository = workerRepository, serviceId = serviceId)
+    )
+    val uiState by editServiceViewModel.uiState.collectAsState()
 
     LaunchedEffect(uiState.isSuccess) {
         if (uiState.isSuccess) {
@@ -64,7 +63,7 @@ fun EditServiceScreen(
                 Text("Titulo", style = MaterialTheme.typography.labelMedium)
                 OutlinedTextField(
                     value = uiState.title,
-                    onValueChange = viewModel::updateTitle,
+                    onValueChange = editServiceViewModel::updateTitle,
                     placeholder = { Text("Coloque aquí su título...") },
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -72,7 +71,7 @@ fun EditServiceScreen(
                 Text("Descripción", style = MaterialTheme.typography.labelMedium)
                 OutlinedTextField(
                     value = uiState.description,
-                    onValueChange = viewModel::updateDescription,
+                    onValueChange = editServiceViewModel::updateDescription,
                     placeholder = { Text("Coloque la descripción aquí...") },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -103,7 +102,7 @@ fun EditServiceScreen(
                             DropdownMenuItem(
                                 text = { Text(cat) },
                                 onClick = {
-                                    viewModel.updateCategory(cat)
+                                    editServiceViewModel.updateCategory(cat)
                                     expandedCategory = false
                                 }
                             )
@@ -114,7 +113,7 @@ fun EditServiceScreen(
                 Text("Precio", style = MaterialTheme.typography.labelMedium)
                 OutlinedTextField(
                     value = uiState.price,
-                    onValueChange = viewModel::updatePrice,
+                    onValueChange = editServiceViewModel::updatePrice,
                     placeholder = { Text("Coloque aquí su precio en (S/.)") },
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -148,7 +147,7 @@ fun EditServiceScreen(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Button(
-                    onClick = viewModel::updateService,
+                    onClick = editServiceViewModel::updateService,
                     modifier = Modifier.fillMaxWidth(),
                     enabled = !uiState.isLoading
                 ) {
@@ -163,7 +162,7 @@ fun EditServiceScreen(
                     Text(error, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
                     LaunchedEffect(error) {
                         kotlinx.coroutines.delay(3000)
-                        viewModel.clearError()
+                        editServiceViewModel.clearError()
                     }
                 }
             }

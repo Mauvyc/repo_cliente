@@ -1,5 +1,7 @@
 package com.example.serviconnecta.feature.worker.data.remote
 
+import com.squareup.moshi.Json
+import com.squareup.moshi.JsonClass
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -40,9 +42,10 @@ data class NextReservationDto(
 )
 
 @Serializable
+@JsonClass(generateAdapter = true)
 data class TimeRangeDto(
-    val start: String,
-    val end: String
+    @SerialName("start") @Json(name = "start") val start: String,
+    @SerialName("end") @Json(name = "end") val end: String
 )
 
 //@Serializable

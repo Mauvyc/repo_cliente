@@ -1,4 +1,4 @@
-package com.example.serviconnecta.feature.worker.ui.requests
+package com.example.serviconnecta.feature.worker.ui.reservations
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -11,41 +11,41 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-data class RequestsUiState(
+data class ReservationsUiState(
     val isLoading: Boolean = false,
-    val requests: List<ServiceRequest> = emptyList(),
-    val selectedRequest: ServiceRequest? = null,
+    val reservations: List<ServiceRequest> = emptyList(),
+    val selectedReservation: ServiceRequest? = null,
     val showDetailDialog: Boolean = false,
     val errorMessage: String? = null,
     val successMessage: String? = null
 )
 
-class RequestsViewModel(
+class ReservationsViewModel(
     private val repository: WorkerRepository
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(RequestsUiState())
-    val uiState: StateFlow<RequestsUiState> = _uiState.asStateFlow()
+    private val _uiState = MutableStateFlow(ReservationsUiState())
+    val uiState: StateFlow<ReservationsUiState> = _uiState.asStateFlow()
 
     init {
-        loadRequests()
+        loadReservations()
     }
 
-    private fun loadRequests() {
+    private fun loadReservations() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
 
             try {
-                // Obtener las solicitudes pendientes desde el endpoint real
-                val requestsData = repository.getServiceRequests(
-                    status = "PENDING_PROVIDER_CONFIRMATION",
+                // Obtener las reservas confirmadas (status = ACCEPTED)
+                val reservationsData = repository.getServiceRequests(
+                    status = "ACCEPTED",
                     page = 1,
                     pageSize = 100
                 )
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        requests = requestsData.requests,
+                        reservations = reservationsData.requests,
                         errorMessage = null
                     )
                 }
@@ -53,66 +53,46 @@ class RequestsViewModel(
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        errorMessage = e.message ?: "Error al cargar solicitudes"
+                        errorMessage = e.message ?: "Error al cargar reservas"
                     )
                 }
             }
         }
     }
 
-    fun showRequestDetail(request: ServiceRequest) {
+    fun showReservationDetail(reservation: ServiceRequest) {
         _uiState.update {
             it.copy(
-                selectedRequest = request,
+                selectedReservation = reservation,
                 showDetailDialog = true
             )
         }
     }
 
-    fun hideRequestDetail() {
+    fun hideReservationDetail() {
         _uiState.update {
             it.copy(
-                selectedRequest = null,
+                selectedReservation = null,
                 showDetailDialog = false
             )
         }
     }
 
-    fun acceptRequest(requestId: String) {
+    fun cancelReservation(requestId: String, reason: String = "Imprevisto de último minuto.") {
         viewModelScope.launch {
             try {
-                repository.acceptServiceRequest(requestId, notes = null)
+                repository.cancelReservation(requestId, reason)
                 _uiState.update {
                     it.copy(
-                        requests = it.requests.filter { req -> req.requestId != requestId },
-                        successMessage = "Solicitud aceptada - Agregada a tu agenda",
+                        reservations = it.reservations.filter { req -> req.requestId != requestId },
+                        successMessage = "Reserva cancelada exitosamente",
                         showDetailDialog = false,
-                        selectedRequest = null
+                        selectedReservation = null
                     )
                 }
             } catch (e: Exception) {
                 _uiState.update {
-                    it.copy(errorMessage = e.message ?: "Error al aceptar")
-                }
-            }
-        }
-    }
-
-    fun rejectRequest(requestId: String) {
-        viewModelScope.launch {
-            try {
-                repository.rejectServiceRequest(requestId, reason = null)
-                _uiState.update {
-                    it.copy(
-                        requests = it.requests.filter { req -> req.requestId != requestId },
-                        successMessage = "Solicitud rechazada",
-                        showDetailDialog = false,
-                        selectedRequest = null
-                    )
-                }
-            } catch (e: Exception) {
-                _uiState.update {
-                    it.copy(errorMessage = e.message ?: "Error al rechazar")
+                    it.copy(errorMessage = e.message ?: "Error al cancelar reserva")
                 }
             }
         }
@@ -125,13 +105,13 @@ class RequestsViewModel(
     }
 }
 
-class RequestsViewModelFactory(
+class ReservationsViewModelFactory(
     private val repository: WorkerRepository
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(RequestsViewModel::class.java)) {
+        if (modelClass.isAssignableFrom(ReservationsViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return RequestsViewModel(repository) as T
+            return ReservationsViewModel(repository) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

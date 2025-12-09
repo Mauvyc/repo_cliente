@@ -20,6 +20,7 @@ import com.example.serviconnecta.feature.worker.ui.areas.MyAreasScreen
 import com.example.serviconnecta.feature.worker.ui.home.WorkerHomeScreen
 import com.example.serviconnecta.feature.worker.ui.profile.WorkerProfileScreen
 import com.example.serviconnecta.feature.worker.ui.requests.RequestsScreen
+import com.example.serviconnecta.feature.worker.ui.reservations.ReservationsScreen
 import com.example.serviconnecta.feature.worker.ui.reviews.MyReviewsScreen
 import com.example.serviconnecta.feature.worker.ui.schedule.ScheduleScreen
 import com.example.serviconnecta.feature.worker.ui.services.AddServiceScreen
@@ -70,15 +71,20 @@ fun WorkerNavGraph(
                 onNavigateToRequests = {
                     navController.navigate(AppDestination.WorkerRequests.route)
                 },
+                onNavigateToReservations = {
+                    navController.navigate(AppDestination.WorkerReservations.route)
+                },
                 onNavigateToProfile = {
                     navController.navigate(AppDestination.WorkerProfile.route)
-                }
+                },
+                workerRepository = workerRepository
             )
         }
 
         composable(AppDestination.WorkerAddService.route) {
             AddServiceScreen(
-                onNavigateBack = { navController.navigateUp() }
+                onNavigateBack = { navController.navigateUp() },
+                workerRepository = workerRepository
             )
         }
 
@@ -89,7 +95,8 @@ fun WorkerNavGraph(
             val serviceId = backStackEntry.arguments?.getString("serviceId") ?: return@composable
             EditServiceScreen(
                 serviceId = serviceId,
-                onNavigateBack = { navController.navigateUp() }
+                onNavigateBack = { navController.navigateUp() },
+                workerRepository = workerRepository
             )
         }
 
@@ -98,7 +105,18 @@ fun WorkerNavGraph(
                 onNavigateBack = { navController.navigateUp() },
                 onNavigateToProfile = {
                     navController.navigate(AppDestination.WorkerProfile.route)
-                }
+                },
+                workerRepository = workerRepository
+            )
+        }
+
+        composable(AppDestination.WorkerReservations.route) {
+            ReservationsScreen(
+                onNavigateBack = { navController.navigateUp() },
+                onNavigateToProfile = {
+                    navController.navigate(AppDestination.WorkerProfile.route)
+                },
+                workerRepository = workerRepository
             )
         }
 
