@@ -24,7 +24,7 @@ import com.example.serviconnecta.feature.worker.domain.model.ServiceRequest
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WorkerServicesScreen(
-    onNavigateBack: () -> Unit,
+    onNavigateToHome: () -> Unit,
     onNavigateToAddService: () -> Unit,
     onNavigateToServiceDetail: (String) -> Unit,
     onNavigateToRequests: () -> Unit,
@@ -57,7 +57,7 @@ fun WorkerServicesScreen(
             NavigationBar {
                 NavigationBarItem(
                     selected = false,
-                    onClick = onNavigateBack,
+                    onClick = onNavigateToHome,
                     icon = { Icon(Icons.Default.Home, null) },
                     label = { Text("Inicio") }
                 )

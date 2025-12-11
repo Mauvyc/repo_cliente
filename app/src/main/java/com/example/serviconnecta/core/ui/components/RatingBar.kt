@@ -18,18 +18,20 @@ fun RatingBar(
     modifier: Modifier = Modifier,
     maxStars: Int = 5,
     starSize: Int = 16,
-    tint: Color = Color(0xFFFFC107)
+    tint: Color = Color(0xFFFFC107),
+    emptyTint: Color = Color(0xFFE0E0E0)
 ) {
     Row(modifier = modifier) {
         repeat(maxStars) { index ->
+            val isFilled = index < rating.toInt()
             Icon(
-                imageVector = if (index < rating.toInt()) {
+                imageVector = if (isFilled) {
                     Icons.Filled.Star
                 } else {
                     Icons.Outlined.Star
                 },
                 contentDescription = "Star $index",
-                tint = tint,
+                tint = if (isFilled) tint else emptyTint,
                 modifier = Modifier.size(starSize.dp)
             )
         }

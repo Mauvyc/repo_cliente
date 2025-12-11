@@ -100,7 +100,8 @@ fun ReservationsScreen(
         ReservationDetailDialog(
             reservation = uiState.selectedReservation!!,
             onDismiss = reservationsViewModel::hideReservationDetail,
-            onCancel = { reservationsViewModel.cancelReservation(uiState.selectedReservation!!.requestId) }
+            onCancel = { reservationsViewModel.cancelReservation(uiState.selectedReservation!!.requestId) },
+            onMarkAsCompleted = { reservationsViewModel.markAsCompleted(uiState.selectedReservation!!.requestId) }
         )
     }
 
@@ -152,9 +153,11 @@ private fun ReservationCard(
 private fun ReservationDetailDialog(
     reservation: ServiceRequest,
     onDismiss: () -> Unit,
-    onCancel: () -> Unit
+    onCancel: () -> Unit,
+    onMarkAsCompleted: () -> Unit
 ) {
     var showCancelConfirmation by remember { mutableStateOf(false) }
+    var showCompletedConfirmation by remember { mutableStateOf(false) }
 
     Dialog(onDismissRequest = onDismiss) {
         Card(modifier = Modifier.fillMaxWidth()) {
@@ -240,6 +243,17 @@ private fun ReservationDetailDialog(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
+                // Mark as completed button
+                Button(
+                    onClick = { showCompletedConfirmation = true },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                ) {
+                    Text("Marcar como completado")
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
                 // Cancel button
                 Button(
                     onClick = { showCancelConfirmation = true },
@@ -250,6 +264,30 @@ private fun ReservationDetailDialog(
                 }
             }
         }
+    }
+
+    if (showCompletedConfirmation) {
+        AlertDialog(
+            onDismissRequest = { showCompletedConfirmation = false },
+            title = { Text("Marcar como Completado") },
+            text = { Text("¿Confirmas que el servicio ha sido completado? Esto permitirá al cliente calificar tu trabajo.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showCompletedConfirmation = false
+                        onMarkAsCompleted()
+                        onDismiss()
+                    }
+                ) {
+                    Text("Confirmar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showCompletedConfirmation = false }) {
+                    Text("Volver")
+                }
+            }
+        )
     }
 
     if (showCancelConfirmation) {

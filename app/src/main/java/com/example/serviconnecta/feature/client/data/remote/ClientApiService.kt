@@ -12,14 +12,18 @@ interface ClientApiService {
     @GET("client/home")
     suspend fun getClientHome(
         @Query("latitude") latitude: Double,
-        @Query("longitude") longitude: Double
+        @Query("longitude") longitude: Double,
+        @Query("limit") limit: Int? = null,
+        @Query("page_size") pageSize: Int? = null,
+        @Query("include_all") includeAll: Boolean? = null,
+        @Query("min_rating") minRating: Double? = null
     ): StandardResponse<ClientHomeResponseDto>
 
-    @GET("categories/{category_id}/services")
+    @GET("services/categories/{category_id}/services")
     suspend fun getServicesByCategory(
         @Path("category_id") categoryId: String,
         @Query("page") page: Int = 1,
-        @Query("page_size") pageSize: Int = 10,
+        @Query("page_size") pageSize: Int = 100,
         @Query("search") search: String = ""
     ): StandardResponse<CategoryServicesResponseDto>
 
@@ -65,8 +69,9 @@ interface ClientApiService {
         @Query("page_size") pageSize: Int = 20
     ): StandardResponse<SearchServicesResponseDto>
 
-    @POST("client/reviews")
+    @POST("client/service-request/{request_id}/review")
     suspend fun submitReview(
+        @Path("request_id") requestId: String,
         @Body body: SubmitReviewRequestDto
     ): StandardResponse<SubmitReviewResponseDto>
 

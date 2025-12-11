@@ -22,10 +22,6 @@ class AllServicesViewModel(
     private val _uiState = MutableStateFlow(AllServicesUiState())
     val uiState: StateFlow<AllServicesUiState> = _uiState.asStateFlow()
 
-    init {
-        loadAllServices()
-    }
-
     fun loadAllServices() {
         viewModelScope.launch {
             android.util.Log.d("AllServicesVM", "═══════════════════════════════════════")
@@ -33,22 +29,19 @@ class AllServicesViewModel(
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
 
             try {
-                // Obtener todos los servicios del backend
-                android.util.Log.d("AllServicesVM", "Llamando a clientServicesRepository.getHome()")
-                val homeData = clientServicesRepository.getHome(
-                    latitude = -12.0464,
-                    longitude = -77.0428
-                )
+                // ✅ CORREGIDO: Ahora obtiene TODOS los servicios del backend
+                android.util.Log.d("AllServicesVM", "Llamando a clientServicesRepository.getAllServices()")
+                val allServices = clientServicesRepository.getAllServices()
 
-                android.util.Log.d("AllServicesVM", "✅ Home data obtenida exitosamente")
-                android.util.Log.d("AllServicesVM", "Total servicios recibidos: ${homeData.topServices.size}")
+                android.util.Log.d("AllServicesVM", "✅ Todos los servicios obtenidos exitosamente")
+                android.util.Log.d("AllServicesVM", "Total servicios recibidos: ${allServices.size}")
 
-                homeData.topServices.forEachIndexed { index, service ->
+                allServices.forEachIndexed { index, service ->
                     android.util.Log.d("AllServicesVM", "  Servicio $index: ${service.id} - ${service.title} (rating: ${service.rating})")
                 }
 
                 // Ordenar por rating (descendente) y luego alfabéticamente
-                val sortedServices = homeData.topServices
+                val sortedServices = allServices
                     .sortedWith(
                         compareByDescending<ServiceItem> { it.rating }
                             .thenBy { it.title.lowercase() }
@@ -56,6 +49,7 @@ class AllServicesViewModel(
 
                 android.util.Log.d("AllServicesVM", "Servicios ordenados: ${sortedServices.size}")
                 android.util.Log.d("AllServicesVM", "✅ Estado actualizado correctamente")
+                android.util.Log.d("AllServicesVM", "═══════════════════════════════════════")
 
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
@@ -65,6 +59,7 @@ class AllServicesViewModel(
                 android.util.Log.e("AllServicesVM", "❌ ERROR al cargar servicios", e)
                 android.util.Log.e("AllServicesVM", "Mensaje: ${e.message}")
                 android.util.Log.e("AllServicesVM", "Clase: ${e.javaClass.simpleName}")
+                android.util.Log.e("AllServicesVM", "═══════════════════════════════════════")
                 e.printStackTrace()
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,

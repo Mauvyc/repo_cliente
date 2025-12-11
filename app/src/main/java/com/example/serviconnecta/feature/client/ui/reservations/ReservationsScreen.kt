@@ -11,11 +11,15 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.serviconnecta.core.utils.DateTimeUtils
 import com.example.serviconnecta.core.utils.FormatUtils
 import com.example.serviconnecta.feature.client.domain.model.Booking
 import com.example.serviconnecta.feature.client.domain.model.BookingStatus
@@ -29,9 +33,13 @@ fun MyReservationsScreen(
     viewModel: ReservationsViewModel
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val lifecycleOwner = LocalLifecycleOwner.current
 
-    LaunchedEffect(Unit) {
-        viewModel.loadBookings()
+    // Refrescar las reservas cada vez que la pantalla se vuelve visible (onResume)
+    LaunchedEffect(lifecycleOwner) {
+        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            viewModel.loadBookings()
+        }
     }
 
     Scaffold(
@@ -149,7 +157,7 @@ fun MyReservationsScreen(
                     items(uiState.bookings) { booking ->
                         BookingCard(
                             booking = booking,
-                            onReview = { if (booking.status == BookingStatus.COMPLETED) onNavigateToReview(booking.id) }
+                            onReview = { onNavigateToReview(booking.id) }
                         )
                     }
                 }
@@ -163,6 +171,15 @@ private fun BookingCard(
     booking: Booking,
     onReview: () -> Unit
 ) {
+    // El estado visual es el que viene del backend
+    val displayStatus = booking.status
+
+    // Permitir calificar solo si: el estado es COMPLETED y no tiene reseña
+    val canReview = booking.status == BookingStatus.COMPLETED && !booking.hasReview
+
+    // Log para debug
+    android.util.Log.d("BookingCard", "Booking ${booking.id}: status=${booking.status}, hasReview=${booking.hasReview}, canReview=$canReview")
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -185,29 +202,32 @@ private fun BookingCard(
                 Box(
                     modifier = Modifier
                         .background(
-                            when (booking.status) {
+                            when (displayStatus) {
                                 BookingStatus.PENDING -> Color(0xFFFFF3CD)
+                                BookingStatus.CONFIRMED -> Color(0xFFD1ECF1)
+                                BookingStatus.IN_PROGRESS -> Color(0xFFCCE5FF)
                                 BookingStatus.COMPLETED -> Color(0xFFD4EDDA)
                                 BookingStatus.CANCELLED -> Color(0xFFF8D7DA)
-                                else -> Color.LightGray
                             },
                             RoundedCornerShape(4.dp)
                         )
                         .padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {
                     Text(
-                        when (booking.status) {
+                        when (displayStatus) {
                             BookingStatus.PENDING -> "Pendiente"
+                            BookingStatus.CONFIRMED -> "Confirmado"
+                            BookingStatus.IN_PROGRESS -> "En Progreso"
                             BookingStatus.COMPLETED -> "Completado"
                             BookingStatus.CANCELLED -> "Cancelado"
-                            else -> "Desconocido"
                         },
                         style = MaterialTheme.typography.labelSmall,
-                        color = when (booking.status) {
+                        color = when (displayStatus) {
                             BookingStatus.PENDING -> Color(0xFF856404)
+                            BookingStatus.CONFIRMED -> Color(0xFF0C5460)
+                            BookingStatus.IN_PROGRESS -> Color(0xFF004085)
                             BookingStatus.COMPLETED -> Color(0xFF155724)
                             BookingStatus.CANCELLED -> Color(0xFF721C24)
-                            else -> Color.Gray
                         }
                     )
                 }
@@ -225,7 +245,8 @@ private fun BookingCard(
                     Text("Monto ${FormatUtils.formatPrice(booking.total)}", fontWeight = FontWeight.Bold)
                 }
 
-                if (booking.status == BookingStatus.COMPLETED) {
+                // Mostrar botón de calificar solo si se puede calificar
+                if (canReview) {
                     TextButton(onClick = onReview) {
                         Text("Calificar")
                     }

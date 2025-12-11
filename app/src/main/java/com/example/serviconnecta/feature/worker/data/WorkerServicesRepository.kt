@@ -33,6 +33,8 @@ interface WorkerRepository {
     suspend fun acceptServiceRequest(requestId: String, notes: String? = null): Boolean
     suspend fun rejectServiceRequest(requestId: String, reason: String? = null): Boolean
     suspend fun cancelReservation(requestId: String, reason: String? = null): Boolean
+    suspend fun markServiceAsCompleted(requestId: String, notes: String? = null): Boolean
+    suspend fun getMyReviews(): List<Review>
 }
 
 data class ServiceRequestsData(
@@ -50,7 +52,38 @@ class WorkerRepositoryImpl(
             val response = apiService.getHomeData()
 
             if (response.success && response.data != null) {
-                response.data
+                val dto = response.data
+                WorkerHomeResponse(
+                    provider = Provider(
+                        id = dto.provider.id,
+                        name = dto.provider.name,
+                        avatarUrl = dto.provider.avatarUrl,
+                        profession = dto.provider.profession
+                    ),
+                    nextReservation = NextReservation(
+                        exists = dto.nextRequest != null,
+                        requestId = dto.nextRequest?.requestId,
+                        serviceTitle = dto.nextRequest?.serviceTitle,
+                        clientName = dto.nextRequest?.clientName,
+                        scheduledDate = dto.nextRequest?.date,
+                        timeRange = dto.nextRequest?.let {
+                            TimeRange(
+                                start = it.time.split("-")[0].trim(),
+                                end = it.time.split("-").getOrNull(1)?.trim() ?: ""
+                            )
+                        },
+                        location = dto.nextRequest?.location
+                    ),
+                    servicesSummary = ServicesSummary(
+                        totalServices = dto.servicesSummary.totalServices,
+                        activeServices = dto.servicesSummary.activeServices,
+                        pausedServices = dto.servicesSummary.pausedServices
+                    ),
+                    ratingSummary = RatingSummary(
+                        averageRating = dto.ratingSummary.averageRating,
+                        totalReviews = dto.ratingSummary.totalReviews
+                    )
+                )
             } else {
                 throw Exception("Error al obtener los datos del trabajador: ${response.message}")
             }
@@ -194,6 +227,58 @@ class WorkerRepositoryImpl(
             } else {
                 throw Exception("Error al cancelar reserva: ${response.message}")
             }
+        }
+    }
+
+    override suspend fun markServiceAsCompleted(requestId: String, notes: String?): Boolean {
+        return withContext(Dispatchers.IO) {
+            val request = MarkAsCompletedRequest(notes)
+            val response = apiService.markServiceAsCompleted(requestId, request)
+
+            if (response.success) {
+                true
+            } else {
+                throw Exception("Error al marcar como completado: ${response.message}")
+            }
+        }
+    }
+
+    override suspend fun getMyReviews(): List<Review> {
+        return withContext(Dispatchers.IO) {
+            val response = apiService.getMyReviews()
+
+            if (response.success && response.data != null) {
+                response.data.reviews.map { reviewDto ->
+                    Review(
+                        id = reviewDto.reviewId,
+                        clientId = reviewDto.client.id,
+                        clientName = reviewDto.client.name,
+                        clientPhoto = reviewDto.client.avatarUrl,
+                        serviceId = reviewDto.service.id,
+                        serviceName = reviewDto.service.title,
+                        rating = reviewDto.rating,
+                        comment = reviewDto.comment,
+                        date = formatReviewDate(reviewDto.createdAt)
+                    )
+                }
+            } else {
+                throw Exception("Error al obtener reseñas: ${response.message}")
+            }
+        }
+    }
+
+    private fun formatReviewDate(dateStr: String): String {
+        return try {
+            // Parse ISO 8601 date: "2025-12-10T18:44:17.433Z"
+            val isoFormat = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.getDefault())
+            isoFormat.timeZone = java.util.TimeZone.getTimeZone("UTC")
+            val date = isoFormat.parse(dateStr)
+
+            // Format to readable date: "10 Dic 2025"
+            val outputFormat = java.text.SimpleDateFormat("dd MMM yyyy", java.util.Locale("es", "ES"))
+            date?.let { outputFormat.format(it) } ?: dateStr
+        } catch (e: Exception) {
+            dateStr
         }
     }
 }

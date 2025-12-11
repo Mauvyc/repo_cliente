@@ -2,8 +2,8 @@ package com.example.serviconnecta.feature.worker.ui.reviews
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.serviconnecta.feature.worker.data.MockWorkerRepository
 import com.example.serviconnecta.feature.worker.domain.model.Review
+import com.example.serviconnecta.feature.worker.domain.usecase.GetMyReviewsUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -18,7 +18,7 @@ data class MyReviewsUiState(
 )
 
 class MyReviewsViewModel(
-    private val repository: MockWorkerRepository = MockWorkerRepository
+    private val getMyReviewsUseCase: GetMyReviewsUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(MyReviewsUiState())
@@ -32,7 +32,7 @@ class MyReviewsViewModel(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
 
-            repository.getMyReviews().fold(
+            getMyReviewsUseCase().fold(
                 onSuccess = { reviews ->
                     val average = if (reviews.isNotEmpty()) {
                         reviews.map { it.rating }.average()

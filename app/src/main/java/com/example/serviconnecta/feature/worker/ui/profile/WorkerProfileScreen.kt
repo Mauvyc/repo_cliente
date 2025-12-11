@@ -20,7 +20,7 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun WorkerProfileScreen(
     userPreferences: com.example.serviconnecta.core.datastore.UserPreferences,
-    onNavigateBack: () -> Unit,
+    onNavigateToHome: () -> Unit,
     onNavigateToServices: () -> Unit,
     onNavigateToEditProfile: () -> Unit,
     onNavigateToChangePassword: () -> Unit,
@@ -42,7 +42,7 @@ fun WorkerProfileScreen(
             NavigationBar {
                 NavigationBarItem(
                     selected = false,
-                    onClick = onNavigateBack,
+                    onClick = onNavigateToHome,
                     icon = { Icon(Icons.Default.Home, null) },
                     label = { Text("Inicio") }
                 )

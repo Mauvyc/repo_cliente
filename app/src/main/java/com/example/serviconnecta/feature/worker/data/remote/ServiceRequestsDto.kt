@@ -101,6 +101,19 @@ data class CancelReservationResponse(
     @Json(name = "status") val status: String
 )
 
+// Request para marcar como completado
+@JsonClass(generateAdapter = true)
+data class MarkAsCompletedRequest(
+    @Json(name = "notes") val notes: String? = null
+)
+
+// Response de marcar como completado
+@JsonClass(generateAdapter = true)
+data class MarkAsCompletedResponse(
+    @Json(name = "request_id") val requestId: String,
+    @Json(name = "status") val status: String
+)
+
 // Mappers
 object ServiceRequestsMappers {
     fun ServiceRequestItemDto.toDomain(): ServiceRequest {

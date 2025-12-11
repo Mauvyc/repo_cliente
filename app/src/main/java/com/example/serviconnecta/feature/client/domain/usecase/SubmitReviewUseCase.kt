@@ -13,26 +13,33 @@ class SubmitReviewUseCase(
     /**
      * Envía una reseña para un servicio completado.
      *
-     * @param bookingId ID de la reservación/solicitud de servicio
-     * @param rating Calificación de 1 a 5 estrellas
-     * @param comment Comentario de la reseña (opcional)
+     * @param requestId ID de la solicitud de servicio
+     * @param serviceRating Calificación del servicio de 1 a 5 estrellas
+     * @param providerRating Calificación del proveedor de 1 a 5 estrellas
+     * @param highlights Lista de aspectos destacados
+     * @param comment Comentario de la reseña
      * @return Unit si la reseña se envió exitosamente
      * @throws IllegalArgumentException Si los parámetros no son válidos
      * @throws Exception Si ocurre un error al enviar la reseña
      */
     suspend operator fun invoke(
-        bookingId: String,
-        rating: Int,
+        requestId: String,
+        serviceRating: Int,
+        providerRating: Int,
+        highlights: List<String>,
         comment: String
     ) {
         // Validaciones de negocio
-        require(bookingId.isNotBlank()) { "El ID de la reservación no puede estar vacío" }
-        require(rating in 1..5) { "La calificación debe estar entre 1 y 5 estrellas" }
+        require(requestId.isNotBlank()) { "El ID de la solicitud no puede estar vacío" }
+        require(serviceRating in 1..5) { "La calificación del servicio debe estar entre 1 y 5 estrellas" }
+        require(providerRating in 1..5) { "La calificación del proveedor debe estar entre 1 y 5 estrellas" }
 
         // Llamar al repository para enviar la reseña
         repository.submitReview(
-            bookingId = bookingId,
-            rating = rating,
+            requestId = requestId,
+            serviceRating = serviceRating,
+            providerRating = providerRating,
+            highlights = highlights,
             comment = comment
         )
     }

@@ -35,10 +35,18 @@ data class ClientHomeData(
     val featuredWorkers: List<Provider>
 )
 class ClientServicesRepository(
-    private val clientApi: ClientApiService
+    private val clientApi: ClientApiService,
+    private val reviewedServicesPreferences: com.example.serviconnecta.core.datastore.ReviewedServicesPreferences
 ) {
-    suspend fun getHome(latitude: Double, longitude: Double): ClientHomeData {
-        val response = clientApi.getClientHome(latitude, longitude)
+    suspend fun getHome(
+        latitude: Double,
+        longitude: Double,
+        limit: Int? = null,
+        pageSize: Int? = null,
+        includeAll: Boolean? = null,
+        minRating: Double? = null
+    ): ClientHomeData {
+        val response = clientApi.getClientHome(latitude, longitude, limit, pageSize, includeAll, minRating)
 
         if (!response.success) {
             throw IllegalStateException(response.message)
@@ -55,20 +63,32 @@ class ClientServicesRepository(
             android.util.Log.d("ClientServicesRepo", "Category: id=${cat.id}, name=${cat.name}")
         }
 
-        val categories = data.categories.map { cat ->
-            Category(
-                id = cat.id,
-                name = cat.name,
-                slug = cat.name
+        val categories = data.categories
+            .filter { cat ->
+                // Filtrar la categoría de limpieza
+                val normalizedName = cat.name
                     .lowercase()
                     .replace("á", "a")
                     .replace("é", "e")
                     .replace("í", "i")
                     .replace("ó", "o")
-                    .replace("ú", "u"),
-                iconName = cat.icon_url
-            )
-        }
+                    .replace("ú", "u")
+                normalizedName != "limpieza"
+            }
+            .map { cat ->
+                Category(
+                    id = cat.id,
+                    name = cat.name,
+                    slug = cat.name
+                        .lowercase()
+                        .replace("á", "a")
+                        .replace("é", "e")
+                        .replace("í", "i")
+                        .replace("ó", "o")
+                        .replace("ú", "u"),
+                    iconName = cat.icon_url
+                )
+            }
 
         android.util.Log.d("ClientServicesRepo", "Home returned ${data.top_services.size} services")
         data.top_services.forEachIndexed { index, srv ->
@@ -161,21 +181,10 @@ class ClientServicesRepository(
 //    }
 
     /**
-     * Obtiene servicios filtrados por categoría.
+     * Obtiene servicios filtrados por categoría usando el endpoint específico del API.
      *
-     * SERVICIOS DISPONIBLES EN EL BACKEND (5 servicios totales):
-     * - Electricidad (692b8dc198d59291c777649e): 4 servicios
-     *   • 692b8dc298d59291c77764b1 - Reparación de tablero de interruptores
-     *   • 692b8dc298d59291c77764af - Servicio de electricista
-     *   • 692b8dc298d59291c77764b0 - Instalación del interruptor de CA
-     *   • 692b8dc298d59291c77764b3 - Revisión de cables eléctricos
-     * - Gasfitería (692b8dc198d59291c777649d): 1 servicio
-     *   • 692b8dc298d59291c77764b2 - Detección y reparación de fugas de agua
-     * - Limpieza (692b8dc198d59291c77764a0): 0 servicios
-     * - Albañilería (692b8dc198d59291c777649f): 0 servicios
-     *
-     * El endpoint /categories/{id}/services NO existe en el backend.
-     * Usa los servicios del home (que retorna estos 5 servicios) y los filtra por category_id.
+     * Usa el endpoint GET /services/categories/{category_id}/services para obtener
+     * TODOS los servicios de una categoría específica.
      *
      * @param categoryId ID de la categoría
      * @return Par con el nombre de la categoría y la lista de servicios filtrados
@@ -184,38 +193,52 @@ class ClientServicesRepository(
         android.util.Log.d("ClientServicesRepo", "═══════════════════════════════════════")
         android.util.Log.d("ClientServicesRepo", "getServicesByCategory - categoryId: $categoryId")
 
-        // Obtener servicios del home (contiene los 5 servicios del backend)
-        val homeData = getHome(latitude = -12.0464, longitude = -77.0428)
+        val response = clientApi.getServicesByCategory(
+            categoryId = categoryId,
+            page = 1,
+            pageSize = 100,
+            search = ""
+        )
 
-        // Buscar la categoría por ID para obtener su nombre
-        val category = homeData.categories.firstOrNull { it.id == categoryId }
-
-        if (category == null) {
-            android.util.Log.e("ClientServicesRepo", "❌ Category not found: $categoryId")
-            android.util.Log.d("ClientServicesRepo", "Available categories:")
-            homeData.categories.forEach {
-                android.util.Log.d("ClientServicesRepo", "  - ${it.name} (${it.id})")
-            }
-            throw IllegalStateException("Categoría no encontrada")
+        if (!response.success) {
+            android.util.Log.e("ClientServicesRepo", "❌ Error: ${response.message}")
+            throw IllegalStateException(response.message)
         }
 
-        android.util.Log.d("ClientServicesRepo", "📂 Category found: ${category.name}")
-        android.util.Log.d("ClientServicesRepo", "📊 Total services in home: ${homeData.topServices.size}")
+        val data = response.data
+            ?: throw IllegalStateException("Respuesta vacía del servidor")
 
-        // Filtrar los servicios que pertenecen a esta categoría
-        val filteredServices = homeData.topServices.filter { service ->
-            val matches = service.category == categoryId
-            android.util.Log.d("ClientServicesRepo", "  Service: ${service.title} | category: ${service.category} | matches: $matches")
-            matches
+        val categoryName = data.category.name
+        android.util.Log.d("ClientServicesRepo", "📂 Category: $categoryName")
+        android.util.Log.d("ClientServicesRepo", "📊 Total services: ${data.services.size}")
+
+        val services = data.services.map { dto ->
+            ServiceItem(
+                id = dto.id,
+                title = dto.title,
+                description = "",
+                category = categoryName,
+                price = dto.price,
+                imageUrl = dto.image_url,
+                rating = dto.rating,
+                reviewCount = dto.reviews_count,
+                provider = Provider(
+                    id = dto.provider.id,
+                    name = dto.provider.name,
+                    photo = dto.provider.avatar_url,
+                    specialty = dto.provider.profession,
+                    rating = dto.rating
+                )
+            )
         }
 
-        android.util.Log.d("ClientServicesRepo", "✅ Filtered ${filteredServices.size} services for category ${category.name}")
-        filteredServices.forEach { service ->
+        android.util.Log.d("ClientServicesRepo", "✅ Loaded ${services.size} services for category $categoryName")
+        services.forEach { service ->
             android.util.Log.d("ClientServicesRepo", "  ✓ ${service.title} - ${FormatUtils.formatPrice(service.price)}")
         }
         android.util.Log.d("ClientServicesRepo", "═══════════════════════════════════════")
 
-        return category.name to filteredServices
+        return categoryName to services
     }
 
 //    suspend fun getServiceDetail(serviceId: String): ServiceItem {
@@ -272,6 +295,27 @@ class ClientServicesRepository(
         }
 
         return response.data?.requests?.map { it.toDomainBooking() } ?: emptyList()
+    }
+
+    /**
+     * Obtiene una reserva específica por su ID.
+     * Busca en todas las reservas del cliente.
+     *
+     * @param bookingId ID de la reserva (request_id)
+     * @return Booking encontrado
+     * @throws Exception si no se encuentra la reserva
+     */
+    suspend fun getBookingById(bookingId: String): Booking {
+        // Obtener todas las reservas con un page_size grande para asegurar que encontremos la reserva
+        val allBookings = getClientReservations(status = "ALL", page = 1, pageSize = 100)
+
+        val booking = allBookings.find { it.id == bookingId }
+
+        if (booking != null) {
+            return booking
+        } else {
+            throw Exception("No se encontró la reserva con ID: $bookingId")
+        }
     }
 
     suspend fun getClientLocations(): List<Location> {
@@ -425,21 +469,22 @@ class ClientServicesRepository(
             return emptyList()
         }
 
-        // Obtener servicios del home (contiene los 5 servicios del backend)
-        val homeData = getHome(latitude = -12.0464, longitude = -77.0428)
+        // Obtener TODOS los servicios disponibles de todas las categorías
+        val allServices = getAllServices()
 
-        android.util.Log.d("ClientServicesRepo", "📊 Total services available: ${homeData.topServices.size}")
+        android.util.Log.d("ClientServicesRepo", "📊 Total services available: ${allServices.size}")
 
         // Filtrar servicios localmente por query (case-insensitive)
         val queryLower = query.lowercase()
 
-        val filteredServices = homeData.topServices.filter { service ->
+        val filteredServices = allServices.filter { service ->
             val titleMatch = service.title.lowercase().contains(queryLower)
+            val categoryMatch = service.category.lowercase().contains(queryLower)
             val providerMatch = service.provider.name.lowercase().contains(queryLower)
             val specialtyMatch = service.provider.specialty.lowercase().contains(queryLower)
-            val matches = titleMatch || providerMatch || specialtyMatch
+            val matches = titleMatch || categoryMatch || providerMatch || specialtyMatch
 
-            android.util.Log.d("ClientServicesRepo", "  Service: ${service.title} | title:$titleMatch provider:$providerMatch specialty:$specialtyMatch | matches: $matches")
+            android.util.Log.d("ClientServicesRepo", "  Service: ${service.title} | title:$titleMatch category:$categoryMatch provider:$providerMatch specialty:$specialtyMatch | matches: $matches")
             matches
         }
 
@@ -455,27 +500,27 @@ class ClientServicesRepository(
     /**
      * Envía una reseña para un servicio completado.
      *
-     * NOTA: El backend actualmente NO tiene implementado el endpoint POST /client/reviews.
-     * Esta implementación está preparada para conectarse al endpoint cuando esté disponible.
-     *
-     * @param bookingId ID de la reservación/solicitud de servicio
+     * @param requestId ID de la solicitud de servicio (service request)
      * @param rating Calificación de 1 a 5 estrellas
      * @param comment Comentario de la reseña
      * @throws Exception Si ocurre un error al enviar la reseña
      */
     suspend fun submitReview(
-        bookingId: String,
-        rating: Int,
+        requestId: String,
+        serviceRating: Int,
+        providerRating: Int,
+        highlights: List<String>,
         comment: String
     ) {
         try {
             val requestDto = SubmitReviewRequestDto(
-                booking_id = bookingId,
-                rating = rating,
+                service_rating = serviceRating,
+                provider_rating = providerRating,
+                highlights = highlights,
                 comment = comment
             )
 
-            val response = clientApi.submitReview(requestDto)
+            val response = clientApi.submitReview(requestId, requestDto)
 
             if (!response.success || response.data == null) {
                 val errorMsg = response.errors?.joinToString(", ")
@@ -484,14 +529,14 @@ class ClientServicesRepository(
                 throw Exception(errorMsg)
             }
 
-            // Éxito - no retornamos nada (Unit)
+            // Éxito - marcar como reviewed localmente
+            reviewedServicesPreferences.markAsReviewed(requestId)
             android.util.Log.d(
                 "ClientServicesRepository",
-                "Reseña enviada exitosamente: ${response.data.review_id}"
+                "Reseña enviada exitosamente: ${response.data.review_id}, marcado como reviewed: $requestId"
             )
         } catch (e: Exception) {
-            // Si el endpoint no existe, lanzamos excepción para que el ViewModel la maneje
-            android.util.Log.w(
+            android.util.Log.e(
                 "ClientServicesRepository",
                 "Error al enviar reseña: ${e.message}"
             )
@@ -556,5 +601,84 @@ class ClientServicesRepository(
                     "Comprometido con la calidad y la satisfacción del cliente. Trabajo garantizado.",
             isVerified = true
         )
+    }
+
+    /**
+     * Obtiene TODOS los servicios disponibles en el backend.
+     *
+     * IMPORTANTE: Usa el endpoint /services/categories/{category_id}/services
+     * para obtener servicios de TODAS las categorías disponibles.
+     *
+     * Hace 3 llamadas (una por categoría) y combina todos los resultados:
+     * - Albañilería: 692b8dc198d59291c777649f
+     * - Electricidad: 692b8dc198d59291c777649e
+     * - Gasfitería: 692b8dc198d59291c777649d
+     *
+     * @return Lista con todos los servicios disponibles en el backend
+     */
+    suspend fun getAllServices(): List<ServiceItem> {
+        android.util.Log.d("ClientServicesRepo", "═══════════════════════════════════════")
+        android.util.Log.d("ClientServicesRepo", "getAllServices() - Obteniendo servicios de TODAS las categorías")
+
+        try {
+            // IDs de las 3 categorías disponibles
+            val categoryIds = listOf(
+                "692b8dc198d59291c777649f", // Albañilería
+                "692b8dc198d59291c777649e", // Electricidad
+                "692b8dc198d59291c777649d"  // Gasfitería
+            )
+
+            val allServices = mutableListOf<ServiceItem>()
+
+            // Obtener servicios de cada categoría usando el método del repositorio
+            // que ya sabemos que funciona correctamente
+            for (categoryId in categoryIds) {
+                try {
+                    android.util.Log.d("ClientServicesRepo", "📥 Obteniendo servicios de categoría: $categoryId")
+
+                    // Usar el método getServicesByCategory() del repositorio
+                    // en lugar de llamar directamente al API
+                    val (categoryName, categoryServices) = getServicesByCategory(categoryId)
+
+                    android.util.Log.d("ClientServicesRepo", "  ✅ ${categoryServices.size} servicios obtenidos de categoría $categoryName")
+                    allServices.addAll(categoryServices)
+                } catch (e: Exception) {
+                    android.util.Log.e("ClientServicesRepo", "  ❌ EXCEPCIÓN con categoría $categoryId", e)
+                    android.util.Log.e("ClientServicesRepo", "     Tipo: ${e.javaClass.simpleName}")
+                    android.util.Log.e("ClientServicesRepo", "     Mensaje: ${e.message}")
+                    e.printStackTrace()
+                    // Continuar con la siguiente categoría aunque esta falle
+                }
+            }
+
+            // Eliminar duplicados por ID (por si un servicio aparece en múltiples categorías)
+            val uniqueServices = allServices.distinctBy { it.id }
+
+            android.util.Log.d("ClientServicesRepo", "")
+            android.util.Log.d("ClientServicesRepo", "📊 RESUMEN:")
+            android.util.Log.d("ClientServicesRepo", "   Total servicios obtenidos: ${allServices.size}")
+            android.util.Log.d("ClientServicesRepo", "   Servicios únicos: ${uniqueServices.size}")
+
+            if (uniqueServices.isEmpty()) {
+                android.util.Log.w("ClientServicesRepo", "")
+                android.util.Log.w("ClientServicesRepo", "⚠️⚠️⚠️ ADVERTENCIA: NO SE OBTUVIERON SERVICIOS ⚠️⚠️⚠️")
+                android.util.Log.w("ClientServicesRepo", "Esto causará que se muestre 'No hay servicios disponibles' en la UI")
+                android.util.Log.w("ClientServicesRepo", "")
+            } else {
+                uniqueServices.forEachIndexed { index, service ->
+                    android.util.Log.d("ClientServicesRepo", "   ${index + 1}. ${service.title} (rating: ${service.rating})")
+                }
+            }
+
+            android.util.Log.d("ClientServicesRepo", "═══════════════════════════════════════")
+
+            return uniqueServices
+        } catch (e: Exception) {
+            android.util.Log.e("ClientServicesRepo", "❌ Error en getAllServices()", e)
+            android.util.Log.e("ClientServicesRepo", "Mensaje: ${e.message}")
+            android.util.Log.e("ClientServicesRepo", "Tipo: ${e.javaClass.simpleName}")
+            android.util.Log.d("ClientServicesRepo", "═══════════════════════════════════════")
+            throw e
+        }
     }
 }

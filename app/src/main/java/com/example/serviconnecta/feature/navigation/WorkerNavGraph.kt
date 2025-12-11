@@ -34,6 +34,7 @@ fun WorkerNavGraph(
     viewModel: EditProfileViewModel,
     changePasswordViewModel: ChangePasswordViewModel,
     workerRepository: WorkerRepository,
+    myReviewsViewModel: com.example.serviconnecta.feature.worker.ui.reviews.MyReviewsViewModel,
     onLogout: () -> Unit
 ) {
     NavHost(
@@ -49,9 +50,6 @@ fun WorkerNavGraph(
                 onNavigateToRequests = {
                     navController.navigate(AppDestination.WorkerRequests.route)
                 },
-                onNavigateToSchedule = {
-                    navController.navigate(AppDestination.WorkerSchedule.route)
-                },
                 onNavigateToProfile = {
                     navController.navigate(AppDestination.WorkerProfile.route)
                 },
@@ -61,7 +59,11 @@ fun WorkerNavGraph(
 
         composable(AppDestination.WorkerServices.route) {
             WorkerServicesScreen(
-                onNavigateBack = { navController.navigateUp() },
+                onNavigateToHome = {
+                    navController.navigate(AppDestination.WorkerHome.route) {
+                        popUpTo(AppDestination.WorkerHome.route) { inclusive = true }
+                    }
+                },
                 onNavigateToAddService = {
                     navController.navigate(AppDestination.WorkerAddService.route)
                 },
@@ -132,7 +134,11 @@ fun WorkerNavGraph(
         composable(AppDestination.WorkerProfile.route) {
             WorkerProfileScreen(
                 userPreferences = userPreferences,
-                onNavigateBack = { navController.navigateUp() },
+                onNavigateToHome = {
+                    navController.navigate(AppDestination.WorkerHome.route) {
+                        popUpTo(AppDestination.WorkerHome.route) { inclusive = true }
+                    }
+                },
                 onNavigateToServices = {
                     navController.navigate(AppDestination.WorkerServices.route)
                 },
@@ -175,7 +181,8 @@ fun WorkerNavGraph(
 
         composable(AppDestination.WorkerMyReviews.route) {
             MyReviewsScreen(
-                onNavigateBack = { navController.navigateUp() }
+                onNavigateBack = { navController.navigateUp() },
+                viewModel = myReviewsViewModel
             )
         }
 

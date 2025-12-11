@@ -16,9 +16,11 @@ import androidx.navigation.compose.rememberNavController
 import com.example.serviconnecta.core.datastore.AuthPreferences
 import com.example.serviconnecta.core.datastore.LocationPreferences
 import com.example.serviconnecta.core.datastore.UserPreferences
+import com.example.serviconnecta.core.datastore.ReviewedServicesPreferences
 import com.example.serviconnecta.core.datastore.authDataStore
 import com.example.serviconnecta.core.datastore.locationDataStore
 import com.example.serviconnecta.core.datastore.userDataStore
+import com.example.serviconnecta.core.datastore.reviewedServicesDataStore
 import com.example.serviconnecta.core.network.AuthInterceptor
 import com.example.serviconnecta.core.network.NetworkMonitor
 import com.example.serviconnecta.core.network.NoInternetDialog
@@ -46,6 +48,7 @@ import com.example.serviconnecta.feature.client.domain.usecase.GetProviderDetail
 import com.example.serviconnecta.feature.client.domain.usecase.GetServiceDetailUseCase
 import com.example.serviconnecta.feature.client.domain.usecase.GetServicesByCategoryUseCase
 import com.example.serviconnecta.feature.client.domain.usecase.SearchServicesUseCase
+import com.example.serviconnecta.feature.client.domain.usecase.GetBookingByIdUseCase
 import com.example.serviconnecta.feature.client.domain.usecase.SubmitReviewUseCase
 import com.example.serviconnecta.feature.client.ui.home.ClientHomeViewModel
 import com.example.serviconnecta.feature.client.ui.locations.ClientLocationsViewModel
@@ -61,8 +64,11 @@ import com.example.serviconnecta.feature.shared.ui.EditProfileViewModel
 import com.example.serviconnecta.feature.shared.usecase.ChangePasswordUseCase
 import com.example.serviconnecta.feature.worker.data.WorkerRepositoryImpl
 import com.example.serviconnecta.feature.worker.data.remote.WorkerApiService
+import com.example.serviconnecta.feature.worker.domain.usecase.GetMyReviewsUseCase
 import com.example.serviconnecta.feature.worker.ui.home.WorkerHomeViewModel
 import com.example.serviconnecta.feature.worker.ui.home.WorkerHomeViewModelFactory
+import com.example.serviconnecta.feature.worker.ui.reviews.MyReviewsViewModel
+import com.example.serviconnecta.feature.worker.ui.reviews.MyReviewsViewModelFactory
 
 
 class MainActivity : ComponentActivity() {
@@ -88,6 +94,9 @@ class MainActivity : ComponentActivity() {
         val authPreferences = AuthPreferences(authDataStore)
         val userPreferences = UserPreferences(userDataStore)
         val locationPreferences = LocationPreferences(locationDataStore)
+        val reviewedServicesPreferences = ReviewedServicesPreferences(
+            applicationContext.reviewedServicesDataStore
+        )
 
         // --- Monitor de red global ---
         networkMonitor = NetworkMonitor(applicationContext)
@@ -117,7 +126,7 @@ class MainActivity : ComponentActivity() {
         val authRepository = AuthRepositoryImpl(authApi, authPreferences, userPreferences)
         val userProfileRepository = UserProfileRepository(userApi)
         val identityVerificationRepository = IdentityVerificationRepository(identityApi)
-        val clientServicesRepository = ClientServicesRepository(clientApi)
+        val clientServicesRepository = ClientServicesRepository(clientApi, reviewedServicesPreferences)
         val workerRepository = WorkerRepositoryImpl(workerApiService)
 
         // Use cases
@@ -134,9 +143,11 @@ class MainActivity : ComponentActivity() {
         val getClientHomeUseCase = GetClientHomeUseCase(clientServicesRepository)
         val getServiceDetailUseCase = GetServiceDetailUseCase(clientServicesRepository)
         val getClientReservationsUseCase = GetClientReservationsUseCase(clientServicesRepository)
+        val getBookingByIdUseCase = GetBookingByIdUseCase(clientServicesRepository)
         val searchServicesUseCase = SearchServicesUseCase(clientServicesRepository)
         val submitReviewUseCase = SubmitReviewUseCase(clientServicesRepository)
         val getProviderDetailUseCase = GetProviderDetailUseCase(clientServicesRepository)
+        val getMyReviewsUseCase = GetMyReviewsUseCase(workerRepository)
 
 
         // ViewModel factories...
@@ -276,7 +287,8 @@ class MainActivity : ComponentActivity() {
                 if (modelClass.isAssignableFrom(ReservationsViewModel::class.java)) {
                     @Suppress("UNCHECKED_CAST")
                     return ReservationsViewModel(
-                        getClientReservationsUseCase = getClientReservationsUseCase
+                        getClientReservationsUseCase = getClientReservationsUseCase,
+                        reviewedServicesPreferences = reviewedServicesPreferences
                     ) as T
                 }
                 throw IllegalArgumentException("Unknown ViewModel class")
@@ -321,6 +333,7 @@ class MainActivity : ComponentActivity() {
                 if (modelClass.isAssignableFrom(WriteReviewViewModel::class.java)) {
                     @Suppress("UNCHECKED_CAST")
                     return WriteReviewViewModel(
+                        getBookingByIdUseCase = getBookingByIdUseCase,
                         submitReviewUseCase = submitReviewUseCase
                     ) as T
                 }
@@ -366,6 +379,12 @@ class MainActivity : ComponentActivity() {
             WorkerHomeViewModelFactory(repository = workerRepository)
         ).get(WorkerHomeViewModel::class.java)
 
+        val myReviewsVmFactory = MyReviewsViewModelFactory(getMyReviewsUseCase)
+        val myReviewsViewModel: MyReviewsViewModel = ViewModelProvider(
+            this,
+            myReviewsVmFactory
+        ).get(MyReviewsViewModel::class.java)
+
         setContent {
             ServiconnectaTheme {
                 // Observamos el estado de conexión de red
@@ -390,6 +409,7 @@ class MainActivity : ComponentActivity() {
                         providerDetailViewModel = providerDetailViewModel,
                         allServicesViewModel = allServicesViewModel,
                         workerRepository = workerRepository,
+                        myReviewsViewModel = myReviewsViewModel,
                         onClearSession = {
                             sessionManager.clearSession()
                         }

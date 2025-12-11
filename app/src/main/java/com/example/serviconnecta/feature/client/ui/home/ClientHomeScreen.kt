@@ -295,14 +295,34 @@ private fun ServiceCard(service: ServiceItem, onClick: () -> Unit) {
                     Spacer(modifier = Modifier.width(4.dp))
                     Text("(${FormatUtils.formatRating(service.rating)})", style = MaterialTheme.typography.bodySmall)
                 }
-                Text(service.title, fontWeight = FontWeight.Bold)
-                Text(FormatUtils.formatPrice(service.price), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = service.title,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 2,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Text(
+                    text = FormatUtils.formatPrice(service.price),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
                     Icon(Icons.Default.Person, null, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text(service.provider.name, style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        text = service.provider.name,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.weight(1f, fill = false),
+                        maxLines = 1
+                    )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Button(onClick = onClick, modifier = Modifier.height(32.dp)) {
+                    Button(
+                        onClick = onClick,
+                        modifier = Modifier.height(32.dp)
+                    ) {
                         Text("Agregar", style = MaterialTheme.typography.labelSmall)
                     }
                 }

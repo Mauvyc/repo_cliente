@@ -21,7 +21,8 @@ data class ServiceRequestDto(
     val scheduled_date: String,
     val time_range: TimeRangeDto,
     val total: Double,
-    val currency: String
+    val currency: String,
+    val has_review: Boolean? = null  // Indica si ya tiene reseña (opcional)
 )
 
 data class TimeRangeDto(

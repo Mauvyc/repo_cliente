@@ -7,7 +7,7 @@ import retrofit2.http.*
 interface WorkerApiService {
 
     @GET("/provider/home")
-    suspend fun getHomeData(): StandardResponse<WorkerHomeResponse>
+    suspend fun getHomeData(): StandardResponse<WorkerHomeResponseDto>
 
     @GET("/provider/services")
     suspend fun getServices(
@@ -54,4 +54,13 @@ interface WorkerApiService {
         @Path("request_id") requestId: String,
         @Body request: CancelReservationRequest
     ): StandardResponse<CancelReservationResponse>
+
+    @POST("/provider/service-requests/{request_id}/completed")
+    suspend fun markServiceAsCompleted(
+        @Path("request_id") requestId: String,
+        @Body request: MarkAsCompletedRequest
+    ): StandardResponse<MarkAsCompletedResponse>
+
+    @GET("/provider/reviews")
+    suspend fun getMyReviews(): StandardResponse<MyReviewsResponseDto>
 }

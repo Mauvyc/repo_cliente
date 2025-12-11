@@ -20,7 +20,7 @@ import com.example.serviconnecta.feature.worker.domain.model.Review
 @Composable
 fun MyReviewsScreen(
     onNavigateBack: () -> Unit,
-    viewModel: MyReviewsViewModel = viewModel()
+    viewModel: MyReviewsViewModel
 ) {
     val uiState by viewModel.uiState.collectAsState()
 

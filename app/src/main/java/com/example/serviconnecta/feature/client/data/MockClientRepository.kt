@@ -285,12 +285,14 @@ object MockClientRepository {
             providerPhoto = null,
             date = "Lunes, 25 de octubre, 2025",
             time = "11:00 AM",
+            timeEnd = "12:00",
             location = "221B Morelli, San Borja",
             status = BookingStatus.PENDING,
             total = 50.0,
             discount = 0.0,
             paymentMethod = "Efectivo",
-            createdAt = "2025-10-20T10:00:00Z"
+            createdAt = "2025-10-20T10:00:00Z",
+            hasReview = false
         ),
         Booking(
             id = "bk_002",
@@ -302,12 +304,14 @@ object MockClientRepository {
             providerPhoto = null,
             date = "Martes, 24 de octubre, 2025",
             time = "11:30 AM",
+            timeEnd = "12:30",
             location = "Av. Principal 123",
             status = BookingStatus.COMPLETED,
             total = 500.0,
             discount = 0.0,
             paymentMethod = "Efectivo",
-            createdAt = "2025-10-15T08:00:00Z"
+            createdAt = "2025-10-15T08:00:00Z",
+            hasReview = true
         ),
         Booking(
             id = "bk_003",
@@ -319,12 +323,14 @@ object MockClientRepository {
             providerPhoto = null,
             date = "Martes, 24 de octubre, 2025",
             time = "11:30 AM",
+            timeEnd = "12:30",
             location = "Calle Secundaria 456",
             status = BookingStatus.CANCELLED,
             total = 300.0,
             discount = 0.0,
             paymentMethod = "Efectivo",
-            createdAt = "2025-10-10T12:00:00Z"
+            createdAt = "2025-10-10T12:00:00Z",
+            hasReview = false
         )
     )
 
@@ -397,6 +403,9 @@ object MockClientRepository {
         val location = mockLocations.find { it.id == locationId } ?: return Result.failure(Exception("Location not found"))
         val payment = mockPaymentMethods.find { it.id == paymentMethodId } ?: return Result.failure(Exception("Payment method not found"))
 
+        // Extraer hora de fin del rango de tiempo (formato: "HH:mm - HH:mm")
+        val timeEnd = time.split(" - ").lastOrNull()?.trim() ?: "18:00"
+
         val newBooking = Booking(
             id = "bk_${System.currentTimeMillis()}",
             serviceId = service.id,
@@ -407,6 +416,7 @@ object MockClientRepository {
             providerPhoto = service.provider.photo,
             date = date,
             time = time,
+            timeEnd = timeEnd,
             location = location.address,
             status = BookingStatus.PENDING,
             total = service.price,
@@ -418,7 +428,8 @@ object MockClientRepository {
                 PaymentType.APPLE_PAY -> "Apple Pay"
                 PaymentType.CARD -> "Tarjeta **** ${payment.last4}"
             },
-            createdAt = java.time.Instant.now().toString()
+            createdAt = java.time.Instant.now().toString(),
+            hasReview = false
         )
 
         mockBookings.add(0, newBooking)

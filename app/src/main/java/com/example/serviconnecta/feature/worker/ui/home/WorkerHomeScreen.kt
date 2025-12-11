@@ -26,7 +26,6 @@ fun WorkerHomeScreen(
     userPreferences: com.example.serviconnecta.core.datastore.UserPreferences,
     onNavigateToServices: () -> Unit,
     onNavigateToRequests: () -> Unit,
-    onNavigateToSchedule: () -> Unit = {},
     onNavigateToProfile: () -> Unit,
     workerRepository: WorkerRepository
 ) {
@@ -118,44 +117,6 @@ fun WorkerHomeScreen(
                     }
                 } else {
                     Text("No tienes solicitudes próximas.", style = MaterialTheme.typography.bodyMedium, color = Color.Gray, modifier = Modifier.padding(16.dp))
-                }
-            }
-
-            item {
-                OutlinedCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = onNavigateToSchedule
-                ) {
-                    Row(
-                        modifier = Modifier.padding(16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                Icons.Default.CalendarMonth,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(32.dp)
-                            )
-                            Column {
-                                Text(
-                                    "Ver Mi Agenda",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Text(
-                                    "Trabajos aceptados y programados",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = Color.Gray
-                                )
-                            }
-                        }
-                        Icon(Icons.Default.ArrowForward, null)
-                    }
                 }
             }
 

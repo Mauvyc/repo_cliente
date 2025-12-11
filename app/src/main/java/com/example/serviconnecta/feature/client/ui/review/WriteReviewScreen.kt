@@ -25,7 +25,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WriteReviewScreen(
-    bookingId: String,
+    bookingId: String,  // ID de la solicitud de servicio (request_id)
     onNavigateBack: () -> Unit,
     viewModel: WriteReviewViewModel
 ) {
@@ -92,11 +92,15 @@ fun WriteReviewScreen(
                 else -> {
                     ReviewContent(
                         booking = uiState.booking!!,
-                        rating = uiState.rating,
+                        serviceRating = uiState.serviceRating,
+                        providerRating = uiState.providerRating,
+                        selectedHighlights = uiState.selectedHighlights,
                         comment = uiState.comment,
                         isSubmitting = uiState.isSubmitting,
                         error = uiState.error,
-                        onRatingChange = { viewModel.updateRating(it) },
+                        onServiceRatingChange = { viewModel.updateServiceRating(it) },
+                        onProviderRatingChange = { viewModel.updateProviderRating(it) },
+                        onHighlightToggle = { viewModel.toggleHighlight(it) },
                         onCommentChange = { viewModel.updateComment(it) },
                         onSubmit = { viewModel.submitReview(bookingId) }
                     )
@@ -109,11 +113,15 @@ fun WriteReviewScreen(
 @Composable
 private fun ReviewContent(
     booking: com.example.serviconnecta.feature.client.domain.model.Booking,
-    rating: Int,
+    serviceRating: Int,
+    providerRating: Int,
+    selectedHighlights: Set<String>,
     comment: String,
     isSubmitting: Boolean,
     error: String?,
-    onRatingChange: (Int) -> Unit,
+    onServiceRatingChange: (Int) -> Unit,
+    onProviderRatingChange: (Int) -> Unit,
+    onHighlightToggle: (String) -> Unit,
     onCommentChange: (String) -> Unit,
     onSubmit: () -> Unit
 ) {
@@ -177,51 +185,105 @@ private fun ReviewContent(
             }
         }
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
-        // Sección de calificación
+        // Calificación del Servicio
         Text(
-            text = "¿Cómo fue tu experiencia?",
-            style = MaterialTheme.typography.titleLarge,
+            text = "Califica el servicio",
+            style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
-        // Estrellas de calificación
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier.padding(vertical = 8.dp)
         ) {
             for (i in 1..5) {
                 Icon(
-                    imageVector = if (i <= rating) Icons.Filled.Star else Icons.Outlined.StarOutline,
-                    contentDescription = "Estrella $i",
-                    tint = if (i <= rating) Color(0xFFFFC107) else Color.Gray,
+                    imageVector = if (i <= serviceRating) Icons.Filled.Star else Icons.Outlined.StarOutline,
+                    contentDescription = "Estrella servicio $i",
+                    tint = if (i <= serviceRating) Color(0xFFFFC107) else Color.Gray,
                     modifier = Modifier
-                        .size(48.dp)
-                        .clickable { onRatingChange(i) }
+                        .size(40.dp)
+                        .clickable { onServiceRatingChange(i) }
                 )
             }
         }
 
-        if (rating > 0) {
-            Text(
-                text = when (rating) {
-                    1 -> "Muy malo"
-                    2 -> "Malo"
-                    3 -> "Regular"
-                    4 -> "Bueno"
-                    5 -> "Excelente"
-                    else -> ""
-                },
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.primary,
-                fontWeight = FontWeight.Bold
-            )
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Calificación del Proveedor
+        Text(
+            text = "Califica al proveedor",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.padding(vertical = 8.dp)
+        ) {
+            for (i in 1..5) {
+                Icon(
+                    imageVector = if (i <= providerRating) Icons.Filled.Star else Icons.Outlined.StarOutline,
+                    contentDescription = "Estrella proveedor $i",
+                    tint = if (i <= providerRating) Color(0xFFFFC107) else Color.Gray,
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clickable { onProviderRatingChange(i) }
+                )
+            }
         }
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Aspectos destacados
+        Text(
+            text = "Aspectos destacados (opcional)",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        val highlightOptions = listOf(
+            "Calidad del servicio",
+            "Cumplimiento del horario",
+            "Buena comunicación",
+            "Precio justo",
+            "Profesionalismo",
+            "Limpieza"
+        )
+
+        Column(modifier = Modifier.fillMaxWidth()) {
+            highlightOptions.chunked(2).forEach { rowItems ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    rowItems.forEach { highlight ->
+                        val isSelected = selectedHighlights.contains(highlight)
+                        FilterChip(
+                            selected = isSelected,
+                            onClick = { onHighlightToggle(highlight) },
+                            label = { Text(highlight) },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    // Agregar espacio si solo hay un item en la fila
+                    if (rowItems.size == 1) {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
 
         // Campo de comentario
         Text(
@@ -268,7 +330,7 @@ private fun ReviewContent(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp),
-            enabled = !isSubmitting && rating > 0,
+            enabled = !isSubmitting && serviceRating > 0 && providerRating > 0,
             shape = RoundedCornerShape(12.dp)
         ) {
             if (isSubmitting) {

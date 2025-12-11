@@ -76,6 +76,9 @@ fun HomeWorkerDto.toDomainProvider(): Provider {
 }
 
 fun ServiceRequestDto.toDomainBooking(): Booking {
+    // Log para debug
+    android.util.Log.d("BookingMapper", "Mapping booking: id=$request_id, status=$status, has_review=$has_review")
+
     return Booking(
         id = request_id,
         serviceId = service_id,
@@ -86,17 +89,20 @@ fun ServiceRequestDto.toDomainBooking(): Booking {
         providerPhoto = null,
         date = scheduled_date,
         time = "${time_range.start} - ${time_range.end}",
+        timeEnd = time_range.end,    // Hora de fin para validar si pasó
         location = "Sin dirección",  // El endpoint no la entrega
         status = when (status) {
             "IN_PROGRESS" -> BookingStatus.IN_PROGRESS
             "COMPLETED" -> BookingStatus.COMPLETED
-            "CANCELLED" -> BookingStatus.CANCELLED
+            "CANCELLED", "CANCELLED_BY_PROVIDER", "CANCELLED_BY_CLIENT" -> BookingStatus.CANCELLED
+            "ACCEPTED" -> BookingStatus.CONFIRMED
             else -> BookingStatus.PENDING
         },
         total = total,
         discount = 0.0,              // El endpoint no lo entrega
         paymentMethod = "Desconocido", // No llega en la respuesta
-        createdAt = scheduled_date
+        createdAt = scheduled_date,
+        hasReview = has_review ?: false  // Si el backend no lo envía, asumimos false
     )
 }
 

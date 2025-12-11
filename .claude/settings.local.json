@@ -2,9 +2,15 @@
   "permissions": {
     "allow": [
       "Bash(./gradlew build:*)",
-      "Bash(./gradlew assembleDebug:*)"
+      "Bash(./gradlew assembleDebug:*)",
+      "mcp__mongodb__update-many",
+      "mcp__mongodb__find"
     ],
     "deny": [],
     "ask": []
-  }
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "mongodb"
+  ]
 }

@@ -67,36 +67,41 @@ data class TimeRangeDto(
 //)
 
 
+@JsonClass(generateAdapter = true)
 data class WorkerHomeResponseDto(
-    val provider: ProviderDto,
-    val nextRequest: ServiceRequestDto?,
-    val servicesSummary: ServicesSummaryDto,
-    val ratingSummary: RatingSummaryDto
+    @Json(name = "provider") val provider: ProviderDto,
+    @Json(name = "next_request") val nextRequest: ServiceRequestDto?,
+    @Json(name = "services_summary") val servicesSummary: ServicesSummaryDto,
+    @Json(name = "rating_summary") val ratingSummary: RatingSummaryDto
 )
 
+@JsonClass(generateAdapter = true)
 data class ProviderDto(
-    val id: String,
-    val name: String,
-    val avatarUrl: String?,
-    val profession: String
+    @Json(name = "id") val id: String,
+    @Json(name = "name") val name: String,
+    @Json(name = "avatar_url") val avatarUrl: String?,
+    @Json(name = "profession") val profession: String
 )
 
+@JsonClass(generateAdapter = true)
 data class ServiceRequestDto(
-    val requestId: String,
-    val serviceTitle: String,
-    val clientName: String,
-    val date: String,
-    val time: String,
-    val location: String
+    @Json(name = "request_id") val requestId: String,
+    @Json(name = "service_title") val serviceTitle: String,
+    @Json(name = "client_name") val clientName: String,
+    @Json(name = "date") val date: String,
+    @Json(name = "time") val time: String,
+    @Json(name = "location") val location: String
 )
 
+@JsonClass(generateAdapter = true)
 data class ServicesSummaryDto(
-    val totalServices: Int,
-    val activeServices: Int,
-    val pausedServices: Int
+    @Json(name = "total_services") val totalServices: Int,
+    @Json(name = "active_services") val activeServices: Int,
+    @Json(name = "paused_services") val pausedServices: Int
 )
 
+@JsonClass(generateAdapter = true)
 data class RatingSummaryDto(
-    val averageRating: Double,
-    val totalReviews: Int
+    @Json(name = "average_rating") val averageRating: Double,
+    @Json(name = "total_reviews") val totalReviews: Int
 )

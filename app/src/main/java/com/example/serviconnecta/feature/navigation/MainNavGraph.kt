@@ -47,6 +47,7 @@ fun MainNavGraph(
     providerDetailViewModel: ProviderDetailViewModel,
     allServicesViewModel: AllServicesViewModel,
     workerRepository: WorkerRepository,
+    myReviewsViewModel: com.example.serviconnecta.feature.worker.ui.reviews.MyReviewsViewModel,
     onClearSession: suspend () -> Unit
 ) {
     val rootNavController = rememberNavController()
@@ -113,6 +114,7 @@ fun MainNavGraph(
                 viewModel = editProfileViewModel,
                 changePasswordViewModel = changePasswordViewModel,
                 workerRepository = workerRepository,
+                myReviewsViewModel = myReviewsViewModel,
                 onLogout = {
                     kotlinx.coroutines.runBlocking {
                         onClearSession()

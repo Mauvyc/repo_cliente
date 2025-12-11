@@ -2,8 +2,8 @@ package com.example.serviconnecta.feature.client.ui.review
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.serviconnecta.feature.client.data.MockClientRepository
 import com.example.serviconnecta.feature.client.domain.model.Booking
+import com.example.serviconnecta.feature.client.domain.usecase.GetBookingByIdUseCase
 import com.example.serviconnecta.feature.client.domain.usecase.SubmitReviewUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -13,7 +13,9 @@ import kotlinx.coroutines.launch
 data class WriteReviewUiState(
     val isLoading: Boolean = false,
     val booking: Booking? = null,
-    val rating: Int = 0,
+    val serviceRating: Int = 0,           // Calificación del servicio
+    val providerRating: Int = 0,          // Calificación del proveedor
+    val selectedHighlights: Set<String> = emptySet(), // Highlights seleccionados
     val comment: String = "",
     val isSubmitting: Boolean = false,
     val submitSuccess: Boolean = false,
@@ -21,11 +23,9 @@ data class WriteReviewUiState(
 )
 
 class WriteReviewViewModel(
+    private val getBookingByIdUseCase: GetBookingByIdUseCase,
     private val submitReviewUseCase: SubmitReviewUseCase
 ) : ViewModel() {
-
-    // Mantener MockClientRepository solo para loadBooking hasta que se implemente el UseCase correspondiente
-    private val repository = MockClientRepository
 
     private val _uiState = MutableStateFlow(WriteReviewUiState())
     val uiState: StateFlow<WriteReviewUiState> = _uiState.asStateFlow()
@@ -34,33 +34,51 @@ class WriteReviewViewModel(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
 
-            val result = repository.getBookingById(bookingId)
-
-            if (result.isSuccess) {
+            try {
+                val booking = getBookingByIdUseCase(bookingId)
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    booking = result.getOrNull()
+                    booking = booking
                 )
-            } else {
+            } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    error = "No se pudo cargar la reserva"
+                    error = e.message ?: "No se pudo cargar la reserva"
                 )
             }
         }
     }
 
-    fun updateRating(rating: Int) {
-        _uiState.value = _uiState.value.copy(rating = rating)
+    fun updateServiceRating(rating: Int) {
+        _uiState.value = _uiState.value.copy(serviceRating = rating)
+    }
+
+    fun updateProviderRating(rating: Int) {
+        _uiState.value = _uiState.value.copy(providerRating = rating)
+    }
+
+    fun toggleHighlight(highlight: String) {
+        val currentHighlights = _uiState.value.selectedHighlights.toMutableSet()
+        if (currentHighlights.contains(highlight)) {
+            currentHighlights.remove(highlight)
+        } else {
+            currentHighlights.add(highlight)
+        }
+        _uiState.value = _uiState.value.copy(selectedHighlights = currentHighlights)
     }
 
     fun updateComment(comment: String) {
         _uiState.value = _uiState.value.copy(comment = comment)
     }
 
-    fun submitReview(bookingId: String) {
-        if (_uiState.value.rating == 0) {
-            _uiState.value = _uiState.value.copy(error = "Por favor selecciona una calificación")
+    fun submitReview(requestId: String) {
+        if (_uiState.value.serviceRating == 0) {
+            _uiState.value = _uiState.value.copy(error = "Por favor califica el servicio")
+            return
+        }
+
+        if (_uiState.value.providerRating == 0) {
+            _uiState.value = _uiState.value.copy(error = "Por favor califica al proveedor")
             return
         }
 
@@ -69,9 +87,11 @@ class WriteReviewViewModel(
 
             try {
                 submitReviewUseCase(
-                    bookingId = bookingId,
-                    rating = _uiState.value.rating,
-                    comment = _uiState.value.comment
+                    requestId = requestId,
+                    serviceRating = _uiState.value.serviceRating,
+                    providerRating = _uiState.value.providerRating,
+                    highlights = _uiState.value.selectedHighlights.toList(),
+                    comment = _uiState.value.comment.ifBlank { "Sin comentarios" }
                 )
 
                 _uiState.value = _uiState.value.copy(

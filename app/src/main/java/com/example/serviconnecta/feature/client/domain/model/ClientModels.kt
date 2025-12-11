@@ -47,12 +47,14 @@ data class Booking(
     val providerPhoto: String?,
     val date: String,
     val time: String,
+    val timeEnd: String,  // Hora de fin del servicio "HH:mm"
     val location: String,
     val status: BookingStatus,
     val total: Double,
     val discount: Double,
     val paymentMethod: String,
-    val createdAt: String
+    val createdAt: String,
+    val hasReview: Boolean = false  // Indica si ya tiene reseña
 )
 
 enum class BookingStatus {

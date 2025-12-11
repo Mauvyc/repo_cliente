@@ -98,6 +98,26 @@ class ReservationsViewModel(
         }
     }
 
+    fun markAsCompleted(requestId: String) {
+        viewModelScope.launch {
+            try {
+                repository.markServiceAsCompleted(requestId)
+                _uiState.update {
+                    it.copy(
+                        reservations = it.reservations.filter { req -> req.requestId != requestId },
+                        successMessage = "Servicio marcado como completado exitosamente",
+                        showDetailDialog = false,
+                        selectedReservation = null
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(errorMessage = e.message ?: "Error al marcar como completado")
+                }
+            }
+        }
+    }
+
     fun clearMessages() {
         _uiState.update {
             it.copy(errorMessage = null, successMessage = null)

@@ -214,14 +214,27 @@ private fun ServiceCard(service: ServiceItem, onClick: () -> Unit) {
                     Spacer(modifier = Modifier.width(4.dp))
                     Text("(${FormatUtils.formatRating(service.rating)})", style = MaterialTheme.typography.bodySmall)
                 }
-                Text(service.title, fontWeight = FontWeight.Bold)
+                Text(
+                    text = service.title,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 2,
+                    style = MaterialTheme.typography.bodyMedium
+                )
                 Text(service.category, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
                 Spacer(modifier = Modifier.height(4.dp))
-                Text(FormatUtils.formatPrice(service.price), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+                Text(
+                    text = FormatUtils.formatPrice(service.price),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.Person, null, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text(service.provider.name, style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        text = service.provider.name,
+                        style = MaterialTheme.typography.bodySmall,
+                        maxLines = 1
+                    )
                 }
             }
             Icon(Icons.Default.ArrowForward, null, modifier = Modifier.align(Alignment.CenterVertically))
