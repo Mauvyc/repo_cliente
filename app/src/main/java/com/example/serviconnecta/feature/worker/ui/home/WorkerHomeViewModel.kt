@@ -26,10 +26,6 @@ class WorkerHomeViewModel(
     private val _uiState = MutableStateFlow(WorkerHomeUiState())
     val uiState: StateFlow<WorkerHomeUiState> = _uiState.asStateFlow()
 
-    init {
-        loadData()
-    }
-
     fun loadData() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }

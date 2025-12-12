@@ -41,7 +41,6 @@ fun EditProfileScreen(
     val errorMessage = viewModel.errorMessage
     val updateSuccess = viewModel.updateSuccess
 
-    // 👇 Efecto que reacciona al éxito
     LaunchedEffect(updateSuccess) {
         if (updateSuccess) {
             Toast
@@ -63,28 +62,6 @@ fun EditProfileScreen(
                 }
             )
         },
-        bottomBar = {
-            NavigationBar {
-                NavigationBarItem(
-                    selected = false,
-                    onClick = { },
-                    icon = { Icon(Icons.Default.Person, null) },
-                    label = { Text("Inicio") }
-                )
-                NavigationBarItem(
-                    selected = false,
-                    onClick = { },
-                    icon = { Icon(Icons.Default.Person, null) },
-                    label = { Text("Servicios") }
-                )
-                NavigationBarItem(
-                    selected = true,
-                    onClick = { },
-                    icon = { Icon(Icons.Default.Person, null) },
-                    label = { Text("Perfil") }
-                )
-            }
-        }
     ) { padding ->
         Column(
             modifier = Modifier

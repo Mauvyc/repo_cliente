@@ -1,5 +1,6 @@
 package com.example.serviconnecta.feature.worker.ui.services
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -76,185 +77,199 @@ fun WorkerServicesScreen(
             }
         }
     ) { padding ->
-        LazyColumn(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            items(uiState.services) { service ->
-                ServiceCard(
-                    service = service,
-                    onEdit = { onNavigateToServiceDetail(service.id) },
-                    onToggleStatus = { workerServicesViewModel.toggleServiceStatus(service.id, service.status.name) }
-                )
-            }
-
-            item {
-                if (uiState.services.isEmpty()) {
-                    Card(
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(32.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Icon(
-                                Icons.Default.Add,
-                                contentDescription = null,
-                                modifier = Modifier.size(64.dp),
-                                tint = Color.Gray
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(uiState.services) { service ->
+                    ServiceCard(
+                        service = service,
+                        onEdit = { onNavigateToServiceDetail(service.id) },
+                        onToggleStatus = {
+                            workerServicesViewModel.toggleServiceStatus(
+                                service.id,
+                                service.status.name
                             )
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Text("No tienes servicios publicados", style = MaterialTheme.typography.bodyLarge)
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Button(onClick = onNavigateToAddService) {
-                                Text("Publicar primer servicio")
+                        }
+                    )
+                }
+
+                item {
+                    if (uiState.services.isEmpty()) {
+                        Card(modifier = Modifier.fillMaxWidth()) {
+                            Column(
+                                modifier = Modifier.padding(32.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Icon(
+                                    Icons.Default.Add,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(64.dp),
+                                    tint = Color.Gray
+                                )
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Text(
+                                    "No tienes servicios publicados",
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Button(onClick = onNavigateToAddService) {
+                                    Text("Publicar primer servicio")
+                                }
                             }
                         }
                     }
                 }
-            }
 
-            item {
-                HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("Solicitudes", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    if (uiState.serviceRequests.isNotEmpty()) {
-                        TextButton(onClick = onNavigateToRequests) {
-                            Text("Ver todas")
-                        }
-                    }
-                }
-            }
-
-            item {
-                if (uiState.serviceRequests.isEmpty()) {
-                    Card(modifier = Modifier.fillMaxWidth()) {
-                        Column(
-                            modifier = Modifier.padding(16.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text("No tienes solicitudes pendientes", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
-                        }
-                    }
-                }
-            }
-
-            items(uiState.serviceRequests.take(3)) { request ->
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { workerServicesViewModel.showRequestDetail(request) }
-                ) {
+                item {
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
                     Row(
-                        modifier = Modifier.padding(16.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(Icons.Default.Person, null, modifier = Modifier.size(40.dp))
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(request.serviceTitle, fontWeight = FontWeight.Bold)
-                            Text(
-                                "${request.clientName} • ${request.location}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Color.Gray
-                            )
-                        }
-                        Icon(Icons.AutoMirrored.Filled.ArrowForward, null)
-                    }
-                }
-            }
-
-            item {
-                HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("Reservas", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    if (uiState.requests.isNotEmpty()) {
-                        TextButton(onClick = onNavigateToReservations) {
-                            Text("Ver todas")
+                        Text(
+                            "Solicitudes",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        if (uiState.serviceRequests.isNotEmpty()) {
+                            TextButton(onClick = onNavigateToRequests) {
+                                Text("Ver todas")
+                            }
                         }
                     }
                 }
-            }
 
-            item {
-                if (uiState.requests.isEmpty()) {
-                    Card(modifier = Modifier.fillMaxWidth()) {
-                        Column(
+                item {
+                    if (uiState.serviceRequests.isEmpty()) {
+                        Card(modifier = Modifier.fillMaxWidth()) {
+                            Column(
+                                modifier = Modifier.padding(16.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    "No tienes solicitudes pendientes",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = Color.Gray
+                                )
+                            }
+                        }
+                    }
+                }
+
+                items(uiState.serviceRequests.take(3)) { request ->
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { workerServicesViewModel.showRequestDetail(request) }
+                    ) {
+                        Row(
                             modifier = Modifier.padding(16.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("No tienes reservas confirmadas", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
+                            Icon(Icons.Default.Person, null, modifier = Modifier.size(40.dp))
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(request.serviceTitle, fontWeight = FontWeight.Bold)
+                                Text(
+                                    "${request.clientName} • ${request.location}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Color.Gray
+                                )
+                            }
+                            Icon(Icons.AutoMirrored.Filled.ArrowForward, null)
                         }
                     }
                 }
-            }
 
-            items(uiState.requests.take(3)) { reservation ->
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { workerServicesViewModel.showReservationDetail(reservation) }
-                ) {
+                item {
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
                     Row(
-                        modifier = Modifier.padding(16.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(Icons.Default.Person, null, modifier = Modifier.size(40.dp))
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(reservation.serviceTitle, fontWeight = FontWeight.Bold)
-                            Text(
-                                "${reservation.clientName} • ${reservation.location}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Color.Gray
-                            )
+                        Text(
+                            "Reservas",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        if (uiState.requests.isNotEmpty()) {
+                            TextButton(onClick = onNavigateToReservations) {
+                                Text("Ver todas")
+                            }
                         }
-                        Icon(Icons.AutoMirrored.Filled.ArrowForward, null)
+                    }
+                }
+
+                item {
+                    if (uiState.requests.isEmpty()) {
+                        Card(modifier = Modifier.fillMaxWidth()) {
+                            Column(
+                                modifier = Modifier.padding(16.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    "No tienes reservas confirmadas",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = Color.Gray
+                                )
+                            }
+                        }
+                    }
+                }
+
+                items(uiState.requests.take(3)) { reservation ->
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { workerServicesViewModel.showReservationDetail(reservation) }
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Default.Person, null, modifier = Modifier.size(40.dp))
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(reservation.serviceTitle, fontWeight = FontWeight.Bold)
+                                Text(
+                                    "${reservation.clientName} • ${reservation.location}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Color.Gray
+                                )
+                            }
+                            Icon(Icons.AutoMirrored.Filled.ArrowForward, null)
+                        }
                     }
                 }
             }
-        }
-    }
 
-    // Diálogo de detalle de solicitud
-    if (uiState.showRequestDetailDialog && uiState.selectedRequest != null) {
-        RequestDetailDialog(
-            request = uiState.selectedRequest!!,
-            onDismiss = workerServicesViewModel::hideRequestDetail,
-            onAccept = { workerServicesViewModel.acceptRequest(uiState.selectedRequest!!.requestId) },
-            onReject = { workerServicesViewModel.rejectRequest(uiState.selectedRequest!!.requestId) }
-        )
-    }
+            if (uiState.isLoading) {
+                val interactionSource =
+                    remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
 
-    // Diálogo de detalle de reserva
-    if (uiState.showReservationDetailDialog && uiState.selectedReservation != null) {
-        ReservationDetailDialog(
-            reservation = uiState.selectedReservation!!,
-            onDismiss = workerServicesViewModel::hideReservationDetail,
-            onCancel = { workerServicesViewModel.cancelReservation(uiState.selectedReservation!!.requestId) }
-        )
-    }
-
-    uiState.successMessage?.let { message ->
-        LaunchedEffect(message) {
-            kotlinx.coroutines.delay(2000)
-            workerServicesViewModel.clearMessages()
-        }
-        Snackbar(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Text(message)
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.background) // opaco
+                        .clickable(
+                            interactionSource = interactionSource,
+                            indication = null
+                        ) { /* consume clicks */ },
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
         }
     }
 }

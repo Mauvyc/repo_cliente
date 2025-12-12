@@ -134,65 +134,13 @@ class ClientServicesRepository(
         )
     }
 
-//    suspend fun getServicesByCategory(
-//        categoryId: String,
-//        page: Int = 1,
-//        pageSize: Int = 10,
-//        search: String = ""
-//    ): Pair<String, List<ServiceItem>> {
-//
-//        val response = clientApi.getServicesByCategory(
-//            categoryId = categoryId,
-//            page = page,
-//            pageSize = pageSize,
-//            search = search
-//        )
-//
-//        if (!response.success) {
-//            throw IllegalStateException(response.message)
-//        }
-//
-//        val data = response.data
-//            ?: throw IllegalStateException("Respuesta vacía del servidor")
-//
-//        val categoryName = data.category.name
-//
-//        val services = data.services.map { dto ->
-//            ServiceItem(
-//                id = dto.id,
-//                title = dto.title,
-//                description = "",                     // no viene en el JSON
-//                category = categoryName,              // usamos el nombre de la categoría
-//                price = dto.price,
-//                imageUrl = dto.image_url,
-//                rating = dto.rating,
-//                reviewCount = dto.reviews_count,
-//                provider = Provider(
-//                    id = dto.provider.id,
-//                    name = dto.provider.name,
-//                    photo = dto.provider.avatar_url,
-//                    specialty = dto.provider.profession,
-//                    rating = dto.rating              // aproximamos con rating del servicio
-//                )
-//            )
-//        }
-//
-//        return categoryName to services
-//    }
-
     /**
      * Obtiene servicios filtrados por categoría usando el endpoint específico del API.
-     *
-     * Usa el endpoint GET /services/categories/{category_id}/services para obtener
-     * TODOS los servicios de una categoría específica.
      *
      * @param categoryId ID de la categoría
      * @return Par con el nombre de la categoría y la lista de servicios filtrados
      */
     suspend fun getServicesByCategory(categoryId: String): Pair<String, List<ServiceItem>> {
-        android.util.Log.d("ClientServicesRepo", "═══════════════════════════════════════")
-        android.util.Log.d("ClientServicesRepo", "getServicesByCategory - categoryId: $categoryId")
-
         val response = clientApi.getServicesByCategory(
             categoryId = categoryId,
             page = 1,
@@ -209,8 +157,6 @@ class ClientServicesRepository(
             ?: throw IllegalStateException("Respuesta vacía del servidor")
 
         val categoryName = data.category.name
-        android.util.Log.d("ClientServicesRepo", "📂 Category: $categoryName")
-        android.util.Log.d("ClientServicesRepo", "📊 Total services: ${data.services.size}")
 
         val services = data.services.map { dto ->
             ServiceItem(
@@ -232,44 +178,8 @@ class ClientServicesRepository(
             )
         }
 
-        android.util.Log.d("ClientServicesRepo", "✅ Loaded ${services.size} services for category $categoryName")
-        services.forEach { service ->
-            android.util.Log.d("ClientServicesRepo", "  ✓ ${service.title} - ${FormatUtils.formatPrice(service.price)}")
-        }
-        android.util.Log.d("ClientServicesRepo", "═══════════════════════════════════════")
-
         return categoryName to services
     }
-
-//    suspend fun getServiceDetail(serviceId: String): ServiceItem {
-//        val response = clientApi.getServiceDetail(serviceId)
-//
-//        if (!response.success) {
-//            throw IllegalStateException(response.message)
-//        }
-//
-//        val dto = response.data
-//            ?: throw IllegalStateException("Respuesta vacía del servidor")
-//
-//        // Mapear DTO → dominio
-//        return ServiceItem(
-//            id = dto.id,
-//            title = dto.title,
-//            description = dto.description,
-//            category = dto.category.name,          // "Gasfitería"
-//            price = dto.price,
-//            imageUrl = dto.image_url,
-//            rating = dto.rating,
-//            reviewCount = dto.reviews_count,
-//            provider = Provider(
-//                id = dto.provider.id,
-//                name = dto.provider.name,
-//                photo = dto.provider.avatar_url,
-//                specialty = dto.provider.profession,
-//                rating = dto.rating
-//            )
-//        )
-//    }
 
     suspend fun getServiceDetail(serviceId: String): ServiceItem {
         val response = clientApi.getServiceDetail(serviceId)
