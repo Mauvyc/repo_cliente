@@ -65,7 +65,7 @@ fun ServiceDetailScreen(
                             fontWeight = FontWeight.Bold
                         )
                         Button(onClick = { onNavigateToBooking(serviceId) }) {
-                            Text("Agregar")
+                            Text("Solicitar")
                         }
                     }
                 }

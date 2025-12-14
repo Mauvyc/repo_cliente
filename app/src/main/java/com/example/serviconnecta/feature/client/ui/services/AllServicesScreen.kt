@@ -174,29 +174,29 @@ private fun ServiceItemCard(
                     color = MaterialTheme.colorScheme.primary
                 )
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(Icons.Default.Person, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(4.dp))
-
                     Text(
                         text = service.provider.name,
                         style = MaterialTheme.typography.bodySmall,
                         maxLines = 1,
-                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f)
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                     )
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
                     Button(
                         onClick = onClick,
                         modifier = Modifier
                             .height(32.dp)
                             .wrapContentWidth()
                     ) {
-                        Text("Agregar", style = MaterialTheme.typography.labelSmall)
+                        Text("Solicitar", style = MaterialTheme.typography.labelSmall)
                     }
                 }
             }

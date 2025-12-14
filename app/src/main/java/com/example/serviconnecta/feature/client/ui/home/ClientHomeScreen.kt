@@ -307,23 +307,26 @@ private fun ServiceCard(service: ServiceItem, onClick: () -> Unit) {
                     color = MaterialTheme.colorScheme.primary
                 )
                 Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(Icons.Default.Person, null, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
                         text = service.provider.name,
                         style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.weight(1f, fill = false),
                         maxLines = 1
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
                     Button(
                         onClick = onClick,
                         modifier = Modifier.height(32.dp)
                     ) {
-                        Text("Agregar", style = MaterialTheme.typography.labelSmall)
+                        Text("Solicitar", style = MaterialTheme.typography.labelSmall)
                     }
                 }
             }
