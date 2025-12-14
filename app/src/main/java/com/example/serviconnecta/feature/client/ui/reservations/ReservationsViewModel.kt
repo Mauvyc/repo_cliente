@@ -28,7 +28,6 @@ class ReservationsViewModel(
 
     fun loadBookings() {
         viewModelScope.launch {
-            android.util.Log.d("ReservationsViewModel", "Loading bookings...")
             _uiState.value = _uiState.value.copy(isLoading = true)
 
             try {
@@ -36,7 +35,6 @@ class ReservationsViewModel(
 
                 // Obtener los IDs de servicios ya calificados
                 val reviewedIds = reviewedServicesPreferences.reviewedRequestIds.first()
-                android.util.Log.d("ReservationsViewModel", "Reviewed request IDs: $reviewedIds")
 
                 // Actualizar hasReview basándonos en los IDs guardados localmente
                 val updatedBookings = bookings.map { booking ->

@@ -101,9 +101,6 @@ class MainActivity : ComponentActivity() {
         // --- Monitor de red global ---
         networkMonitor = NetworkMonitor(applicationContext)
 
-        // Retrofit sin auth (para login/register)
-        val retrofit = RetrofitProvider.createRetrofit()
-
         // Interceptor que lee el accessToken de DataStore
         val authInterceptor = AuthInterceptor {
             // Bloqueamos brevemente para leer el token actual
